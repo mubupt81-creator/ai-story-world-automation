@@ -5,7 +5,7 @@ import urllib.request
 import urllib.error
 
 API_KEY = os.environ["GEMINI_API_KEY"]
-MODEL = "gemini-3.8-flash"
+MODEL = "gemini-3.5-flash-lite"
 TIMEOUT_SECONDS = 180
 MAX_ATTEMPTS = 3
 
