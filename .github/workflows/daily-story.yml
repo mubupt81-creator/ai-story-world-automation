@@ -21,3 +21,11 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python app.py
+
+      - name: Save Story Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-ai-story
+          path: story.txt
+          if-no-files-found: error
+          retention-days: 7
