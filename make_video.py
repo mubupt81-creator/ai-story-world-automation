@@ -121,8 +121,8 @@ def make_video(title, story):
             image_path = OUT / f"scene_{i+1:02d}.jpg"
             make_slide(title, excerpt, i, len(scenes), image_path)
             listing.write(f"file '{image_path.resolve()}'\n")
-            listing.write(f"duration {seconds_per_scene:.3f}\\n")
-        listing.write(f"file '{(OUT / f'scene_{len(scenes):02d}.jpg').resolve()}'\\n")
+            listing.write(f"duration {seconds_per_scene:.3f}\n")
+        listing.write(f"file '{(OUT / f'scene_{len(scenes):02d}.jpg').resolve()}'\n")
 
     video_path = OUT / "ai_story_video.mp4"
     subprocess.run([
