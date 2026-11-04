@@ -6,9 +6,8 @@ import re
 import subprocess
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-import edge_tts
 
-VOICE = "en-US-AriaNeural"
+VOICE = "en-us (local espeak-ng)"
 WIDTH, HEIGHT = 1280, 720
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
@@ -95,9 +94,15 @@ def split_story(story, count=7):
     return [" ".join(group) for group in groups if group]
 
 
-async def make_voice(story):
-    communicate = edge_tts.Communicate(story, VOICE, rate="+0%", volume="+0%")
-    await communicate.save(str(OUT / "narration.mp3"))
+def make_voice(story):
+    audio = OUT / "narration.wav"
+    subprocess.run([
+        "espeak-ng", "-v", "en-us", "-s", "145", "-a", "170",
+        "-w", str(audio), story
+    ], check=True)
+    if not audio.exists() or audio.stat().st_size < 1000:
+        raise RuntimeError("Local text-to-speech did not create an audio file.")
+    print("SUCCESS: Local English voice-over created.")
 
 
 def audio_duration(path):
@@ -110,7 +115,7 @@ def audio_duration(path):
 
 
 def make_video(title, story):
-    audio = OUT / "narration.mp3"
+    audio = OUT / "narration.wav"
     duration = audio_duration(audio)
     scenes = split_story(story)
     seconds_per_scene = duration / len(scenes)
@@ -139,5 +144,5 @@ def make_video(title, story):
 
 if __name__ == "__main__":
     title, story = load_story()
-    asyncio.run(make_voice(story))
+    make_voice(story)
     make_video(title, story)
