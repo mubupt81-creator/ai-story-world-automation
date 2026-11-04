@@ -1,3 +1,2 @@
 google-generativeai
-edge-tts==7.2.7
 Pillow==11.3.0
