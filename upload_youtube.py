@@ -17,7 +17,7 @@ def main():
     title = str(data.get("title", "AI Story World"))[:100]
     description = (
         str(data.get("story", ""))[:4000]
-        + "\\n\\nCreated automatically by AI Story World."
+        + "\n\nCreated automatically by AI Story World."
     )
 
     client_id = os.environ.get("YOUTUBE_CLIENT_ID")
