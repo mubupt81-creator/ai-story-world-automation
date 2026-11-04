@@ -88,7 +88,7 @@ def make_slide(title, excerpt, index, total, path):
 
 
 def split_story(story, count=7):
-    sentences = re.split(r"(?<=[.!?])\\s+", story.strip())
+    sentences = re.split(r"(?<=[.!?])\s+", story.strip())
     groups = [[] for _ in range(min(count, max(1, len(sentences))))]
     for i, sentence in enumerate(sentences):
         groups[min(len(groups)-1, i * len(groups) // len(sentences))].append(sentence)
@@ -120,7 +120,7 @@ def make_video(title, story):
         for i, excerpt in enumerate(scenes):
             image_path = OUT / f"scene_{i+1:02d}.jpg"
             make_slide(title, excerpt, i, len(scenes), image_path)
-            listing.write(f"file '{image_path.resolve()}'\\n")
+            listing.write(f"file '{image_path.resolve()}'\n")
             listing.write(f"duration {seconds_per_scene:.3f}\\n")
         listing.write(f"file '{(OUT / f'scene_{len(scenes):02d}.jpg').resolve()}'\\n")
 
