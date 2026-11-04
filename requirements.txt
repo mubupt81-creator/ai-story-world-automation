@@ -1,1 +1,4 @@
-google-generativeai\nPillow==11.3.0\ngoogle-api-python-client\ngoogle-auth\n
+google-generativeai
+Pillow==11.3.0
+google-api-python-client
+google-auth
