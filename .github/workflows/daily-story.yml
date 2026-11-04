@@ -17,15 +17,27 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install video tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       - name: Generate Story
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python app.py
 
-      - name: Save Story Artifact
+      - name: Generate Voice-over and Video
+        run: python make_video.py
+
+      - name: Save Story and Video
         uses: actions/upload-artifact@v4
         with:
-          name: daily-ai-story
-          path: story.txt
+          name: ai-story-world-video
+          path: |
+            story.txt
+            output/
           if-no-files-found: error
           retention-days: 7
