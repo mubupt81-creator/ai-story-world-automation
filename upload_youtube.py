@@ -20,9 +20,12 @@ def main():
         + "\\n\\nCreated automatically by AI Story World."
     )
 
-    client_id = os.environ["YOUTUBE_CLIENT_ID"]
-    client_secret = os.environ["YOUTUBE_CLIENT_SECRET"]
-    refresh_token = os.environ["YOUTUBE_REFRESH_TOKEN"]
+    client_id = os.environ.get("YOUTUBE_CLIENT_ID")
+    client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
+    refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN")
+    if not all([client_id, client_secret, refresh_token]):
+        print("SKIPPED: YouTube credentials are not configured. Story and video artifacts will still be saved.")
+        return
 
     credentials = Credentials(
         token=None,
