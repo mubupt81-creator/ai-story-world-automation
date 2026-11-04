@@ -32,6 +32,15 @@ jobs:
       - name: Generate Voice-over and Video
         run: python make_video.py
 
+      - name: Upload to YouTube (only when credentials are configured)
+        if: ${{ env.HAS_YOUTUBE_CREDENTIALS == 'true' }}
+        env:
+          HAS_YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CLIENT_ID != '' && secrets.YOUTUBE_CLIENT_SECRET != '' && secrets.YOUTUBE_REFRESH_TOKEN != '' }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python upload_youtube.py
+
       - name: Save Story and Video
         uses: actions/upload-artifact@v4
         with:
