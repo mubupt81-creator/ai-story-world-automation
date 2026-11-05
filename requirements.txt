@@ -2,3 +2,4 @@ google-generativeai
 Pillow==11.3.0
 google-api-python-client
 google-auth
+edge-tts
