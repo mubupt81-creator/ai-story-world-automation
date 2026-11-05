@@ -1,13 +1,12 @@
 import asyncio
 import json
-import math
-import os
 import re
 import subprocess
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+import edge_tts
 
-VOICE = "en-us (local espeak-ng)"
+VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT = 1280, 720
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
@@ -94,15 +93,18 @@ def split_story(story, count=7):
     return [" ".join(group) for group in groups if group]
 
 
-def make_voice(story):
-    audio = OUT / "narration.wav"
-    subprocess.run([
-        "espeak-ng", "-v", "en-us", "-s", "145", "-a", "170",
-        "-w", str(audio), story
-    ], check=True)
+async def make_voice(story):
+    audio = OUT / "narration.mp3"
+    communicate = edge_tts.Communicate(
+        text=story,
+        voice=VOICE,
+        rate="-8%",
+        volume="+0%"
+    )
+    await communicate.save(str(audio))
     if not audio.exists() or audio.stat().st_size < 1000:
-        raise RuntimeError("Local text-to-speech did not create an audio file.")
-    print("SUCCESS: Local English voice-over created.")
+        raise RuntimeError("Neural text-to-speech did not create a valid audio file.")
+    print(f"SUCCESS: Natural English neural voice-over created with {VOICE}.")
 
 
 def audio_duration(path):
@@ -115,7 +117,7 @@ def audio_duration(path):
 
 
 def make_video(title, story):
-    audio = OUT / "narration.wav"
+    audio = OUT / "narration.mp3"
     duration = audio_duration(audio)
     scenes = split_story(story)
     seconds_per_scene = duration / len(scenes)
@@ -144,5 +146,5 @@ def make_video(title, story):
 
 if __name__ == "__main__":
     title, story = load_story()
-    make_voice(story)
+    asyncio.run(make_voice(story))
     make_video(title, story)
