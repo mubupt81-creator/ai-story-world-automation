@@ -206,7 +206,7 @@ def make_video(title, story):
     for i, image_path in enumerate(image_paths):
         scene_duration = seconds_per_scene + (0.15 if i == len(image_paths) - 1 else 0)
         frames = max(1, int(scene_duration * FPS))
-        inputs += ["-loop", "1", "-t", f"{scene_duration:.3f}", "-i", str(image_path)]
+        inputs += ["-i", str(image_path)]
         zoom = "min(zoom+0.00065,1.10)" if i % 2 == 0 else "max(zoom-0.00045,1.0)"
         if i % 2:
             zoom = "if(eq(on,1),1.10,max(zoom-0.00065,1.0))"
