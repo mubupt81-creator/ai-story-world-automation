@@ -1,15 +1,28 @@
 import asyncio
 import json
+import math
 import re
 import subprocess
+import time
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from urllib.parse import quote
+
+import requests
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import edge_tts
 
 VOICE = "en-US-AriaNeural"
-WIDTH, HEIGHT = 1280, 720
+WIDTH, HEIGHT, FPS = 1280, 720, 24
+SCENE_COUNT = 5
+HORDE_API = "https://aihorde.net/api/v2"
+HORDE_KEY = "0000000000"  # AI Horde anonymous, volunteer-powered free access
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
+SESSION = requests.Session()
+SESSION.headers.update({
+    "apikey": HORDE_KEY,
+    "Client-Agent": "AIStoryWorld:1.0:GitHubActions"
+})
 
 
 def load_story():
@@ -21,85 +34,126 @@ def load_story():
 
 
 def get_font(size, bold=False):
-    candidates = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    ]
-    for candidate in candidates:
-        if Path(candidate).exists():
-            return ImageFont.truetype(candidate, size)
-    return ImageFont.load_default()
+    path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    return ImageFont.truetype(path, size) if Path(path).exists() else ImageFont.load_default()
 
 
-def wrap_text(draw, text, font, max_width):
-    words = text.split()
-    lines, current = [], ""
-    for word in words:
-        trial = f"{current} {word}".strip()
-        if draw.textbbox((0, 0), trial, font=font)[2] <= max_width:
-            current = trial
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines
-
-
-def make_slide(title, excerpt, index, total, path):
-    image = Image.new("RGB", (WIDTH, HEIGHT))
-    pixels = image.load()
-    top = (18, 27, 54)
-    bottom = (72, 40, 82)
-    for y in range(HEIGHT):
-        t = y / HEIGHT
-        color = tuple(int(top[i] * (1-t) + bottom[i] * t) for i in range(3))
-        for x in range(WIDTH):
-            pixels[x, y] = color
-
-    draw = ImageDraw.Draw(image, "RGBA")
-    draw.ellipse((930, -190, 1450, 330), fill=(255, 193, 105, 28))
-    draw.ellipse((-180, 500, 260, 940), fill=(120, 190, 255, 22))
-    draw.rounded_rectangle((74, 70, 1206, 650), radius=34,
-                           fill=(8, 12, 28, 150), outline=(255, 220, 170, 100), width=2)
-
-    title_font = get_font(30, True)
-    body_font = get_font(35)
-    small_font = get_font(22)
-    draw.text((120, 112), title, font=title_font, fill=(255, 220, 170, 255))
-    draw.text((120, 178), f"AI STORY WORLD  •  SCENE {index + 1}/{total}",
-              font=small_font, fill=(185, 205, 235, 255))
-
-    lines = wrap_text(draw, excerpt, body_font, 1000)
-    line_height = 54
-    block_height = len(lines) * line_height
-    y = max(260, (HEIGHT - block_height) // 2)
-    for line in lines:
-        draw.text((120, y), line, font=body_font, fill=(255, 255, 255, 255))
-        y += line_height
-
-    draw.rounded_rectangle((120, 590, 1160, 596), radius=3, fill=(255, 220, 170, 100))
-    draw.rounded_rectangle((120, 590, 120 + int(1040 * (index + 1) / total), 596),
-                           radius=3, fill=(255, 220, 170, 255))
-    image.save(path, quality=95)
-
-
-def split_story(story, count=7):
-    sentences = re.split(r"(?<=[.!?])\s+", story.strip())
+def split_story(story, count=SCENE_COUNT):
+    sentences = re.split(r"(?<=[.!?])\\s+", story.strip())
+    sentences = [s.strip() for s in sentences if s.strip()]
     groups = [[] for _ in range(min(count, max(1, len(sentences))))]
     for i, sentence in enumerate(sentences):
-        groups[min(len(groups)-1, i * len(groups) // len(sentences))].append(sentence)
+        groups[min(len(groups) - 1, i * len(groups) // len(sentences))].append(sentence)
     return [" ".join(group) for group in groups if group]
+
+
+def scene_prompt(title, excerpt, index):
+    return (
+        "Cinematic photorealistic movie still, widescreen film composition, "
+        "professional cinematography, natural realistic lighting, rich but natural colors, "
+        "subtle film grain, detailed real-world environment, emotionally expressive scene. "
+        "Create a single coherent visual moment inspired by this story. "
+        "No text, no letters, no captions, no logos, no watermark, no collage. "
+        f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
+    )
+
+
+def generate_horde_image(prompt, destination, index):
+    """Try the free volunteer AI Horde. If unavailable, local visuals keep the run alive."""
+    try:
+        response = SESSION.post(
+            f"{HORDE_API}/generate/async",
+            json={
+                "prompt": prompt,
+                "params": {
+                    "width": 512,
+                    "height": 512,
+                    "steps": 20,
+                    "n": 1,
+                    "cfg_scale": 7,
+                    "sampler_name": "k_euler",
+                    "karras": True
+                },
+                "nsfw": False,
+                "censor_nsfw": True,
+                "models": ["stable_diffusion"]
+            },
+            timeout=30
+        )
+        response.raise_for_status()
+        request_id = response.json().get("id")
+        if not request_id:
+            raise RuntimeError("AI Horde did not return a generation ID.")
+
+        deadline = time.time() + 300
+        while time.time() < deadline:
+            time.sleep(10)
+            check = SESSION.get(f"{HORDE_API}/generate/check/{request_id}", timeout=30)
+            check.raise_for_status()
+            status = check.json()
+            if status.get("faulted"):
+                raise RuntimeError("AI Horde generation was faulted.")
+            if status.get("done"):
+                result = SESSION.get(f"{HORDE_API}/generate/status/{request_id}", timeout=30)
+                result.raise_for_status()
+                generations = result.json().get("generations", [])
+                if not generations or not generations[0].get("img"):
+                    raise RuntimeError("AI Horde returned no image.")
+                image_response = requests.get(generations[0]["img"], timeout=60)
+                image_response.raise_for_status()
+                destination.write_bytes(image_response.content)
+                with Image.open(destination) as check_image:
+                    check_image.verify()
+                print(f"SUCCESS: AI cinematic image generated for scene {index + 1}.")
+                return True
+        raise TimeoutError("AI Horde queue timed out after 5 minutes.")
+    except Exception as error:
+        print(f"NOTICE: AI image unavailable for scene {index + 1}: {error}")
+        print("Using a locally generated cinematic fallback for this scene.")
+        return False
+
+
+def make_fallback_image(title, excerpt, index, path):
+    # Offline fallback: cinematic atmospheric artwork, not an AI-generated image.
+    top = (10 + index * 5, 18 + index * 3, 35 + index * 7)
+    bottom = (62 + index * 7, 35 + index * 4, 65 + index * 5)
+    image = Image.new("RGB", (WIDTH, HEIGHT))
+    draw = ImageDraw.Draw(image, "RGBA")
+    for y in range(HEIGHT):
+        t = y / HEIGHT
+        color = tuple(int(top[c] * (1 - t) + bottom[c] * t) for c in range(3))
+        draw.line((0, y, WIDTH, y), fill=color)
+    draw.ellipse((780, 65, 1230, 515), fill=(255, 190, 115, 32))
+    draw.ellipse((850, 135, 1160, 445), fill=(255, 220, 165, 24))
+    # distant cinematic skyline / landscape silhouette
+    for x in range(0, WIDTH, 95):
+        h = 100 + ((x * 17 + index * 53) % 170)
+        draw.rectangle((x, HEIGHT - h, x + 65, HEIGHT), fill=(4, 8, 20, 175))
+    draw.rectangle((0, 600, WIDTH, HEIGHT), fill=(3, 7, 18, 180))
+    title_font = get_font(32, True)
+    body_font = get_font(24)
+    draw.text((72, 68), title[:55], font=title_font, fill=(255, 225, 190, 245))
+    words = excerpt.split()
+    lines, line = [], ""
+    for word in words:
+        trial = (line + " " + word).strip()
+        if draw.textbbox((0, 0), trial, font=body_font)[2] < 1040:
+            line = trial
+        else:
+            lines.append(line)
+            line = word
+    if line:
+        lines.append(line)
+    for j, text in enumerate(lines[:3]):
+        draw.text((74, 540 + j * 34), text, font=body_font, fill=(255, 255, 255, 235))
+    image = image.filter(ImageFilter.GaussianBlur(0.25))
+    image.save(path, quality=92)
 
 
 async def make_voice(story):
     audio = OUT / "narration.mp3"
     communicate = edge_tts.Communicate(
-        text=story,
-        voice=VOICE,
-        rate="-8%",
-        volume="+0%"
+        text=story, voice=VOICE, rate="-8%", volume="+0%"
     )
     await communicate.save(str(audio))
     if not audio.exists() or audio.stat().st_size < 1000:
@@ -121,27 +175,66 @@ def make_video(title, story):
     duration = audio_duration(audio)
     scenes = split_story(story)
     seconds_per_scene = duration / len(scenes)
-    concat_file = OUT / "scenes.txt"
+    image_paths = []
 
-    with concat_file.open("w", encoding="utf-8") as listing:
-        for i, excerpt in enumerate(scenes):
-            image_path = OUT / f"scene_{i+1:02d}.jpg"
-            make_slide(title, excerpt, i, len(scenes), image_path)
-            listing.write(f"file '{image_path.resolve()}'\n")
-            listing.write(f"duration {seconds_per_scene:.3f}\n")
-        listing.write(f"file '{(OUT / f'scene_{len(scenes):02d}.jpg').resolve()}'\n")
+    for i, excerpt in enumerate(scenes):
+        image_path = OUT / f"scene_{i + 1:02d}.jpg"
+        prompt = scene_prompt(title, excerpt, i)
+        if not generate_horde_image(prompt, image_path, i):
+            make_fallback_image(title, excerpt, i, image_path)
+        # AI Horde returns square images; crop to a cinematic 16:9 frame.
+        with Image.open(image_path) as source:
+            source = source.convert("RGB")
+            sw, sh = source.size
+            target_ratio = WIDTH / HEIGHT
+            if sw / sh > target_ratio:
+                new_w = int(sh * target_ratio)
+                left = (sw - new_w) // 2
+                source = source.crop((left, 0, left + new_w, sh))
+            else:
+                new_h = int(sw / target_ratio)
+                top = (sh - new_h) // 2
+                source = source.crop((0, top, sw, top + new_h))
+            source = source.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+            source.save(image_path, quality=94)
+        image_paths.append(image_path)
 
+    # Each still receives a slow cinematic Ken Burns camera move and soft fades.
+    inputs = []
+    filters = []
+    labels = []
+    for i, image_path in enumerate(image_paths):
+        scene_duration = seconds_per_scene + (0.15 if i == len(image_paths) - 1 else 0)
+        frames = max(1, int(scene_duration * FPS))
+        inputs += ["-loop", "1", "-t", f"{scene_duration:.3f}", "-i", str(image_path)]
+        zoom = "min(zoom+0.00065,1.10)" if i % 2 == 0 else "max(zoom-0.00045,1.0)"
+        if i % 2:
+            zoom = "if(eq(on,1),1.10,max(zoom-0.00065,1.0))"
+        fade_out_start = max(0, scene_duration - 0.45)
+        label = f"v{i}"
+        filters.append(
+            f"[{i}:v]scale=1440:810:force_original_aspect_ratio=increase,"
+            f"crop=1440:810,zoompan=z='{zoom}':d={frames}:s={WIDTH}x{HEIGHT}:fps={FPS},"
+            f"setsar=1,fade=t=in:st=0:d=0.35,"
+            f"fade=t=out:st={fade_out_start:.3f}:d=0.4[{label}]"
+        )
+        labels.append(f"[{label}]")
+
+    concat_inputs = "".join(labels)
+    filters.append(f"{concat_inputs}concat=n={len(image_paths)}:v=1:a=0,format=yuv420p[vout]")
+    filter_complex = ";".join(filters)
     video_path = OUT / "ai_story_video.mp4"
-    subprocess.run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
-        "-i", str(audio), "-vf", "scale=1280:720,format=yuv420p",
-        "-r", "24", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart",
-        str(video_path)
-    ], check=True)
-
-    print(f"SUCCESS: Video created: {video_path} ({duration:.1f}s narration)")
-    print(f"Voice: {VOICE}")
+    subprocess.run(
+        ["ffmpeg", "-y", *inputs, "-i", str(audio),
+         "-filter_complex", filter_complex,
+         "-map", "[vout]", "-map", f"{len(image_paths)}:a",
+         "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast",
+         "-crf", "22", "-c:a", "aac", "-b:a", "160k",
+         "-shortest", "-movflags", "+faststart", str(video_path)],
+        check=True
+    )
+    print(f"SUCCESS: Cinematic 720p video created: {video_path} ({duration:.1f}s)")
+    print(f"Voice: {VOICE}; scenes: {len(image_paths)}; camera motion: slow Ken Burns zoom.")
 
 
 if __name__ == "__main__":
