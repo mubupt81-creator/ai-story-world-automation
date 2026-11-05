@@ -39,7 +39,7 @@ def get_font(size, bold=False):
 
 
 def split_story(story, count=SCENE_COUNT):
-    sentences = re.split(r"(?<=[.!?])\\s+", story.strip())
+    sentences = re.split(r"(?<=[.!?])\s+", story.strip())
     sentences = [s.strip() for s in sentences if s.strip()]
     groups = [[] for _ in range(min(count, max(1, len(sentences))))]
     for i, sentence in enumerate(sentences):
