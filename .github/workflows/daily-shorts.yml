@@ -1,0 +1,44 @@
+name: Daily AI Story Shorts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 14 * * *"
+
+jobs:
+  generate-shorts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install video tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg espeak-ng
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Generate short story
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python app_short.py
+      - name: Generate vertical Short
+        run: python make_shorts.py
+      - name: Upload YouTube Short (private for review)
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python upload_shorts.py
+      - name: Save Short artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-story-world-short
+          path: |
+            story.txt
+            output/
+          if-no-files-found: error
+          retention-days: 7
