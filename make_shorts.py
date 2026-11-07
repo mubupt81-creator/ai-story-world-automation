@@ -49,9 +49,9 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "High-quality colorful 3D cartoon story illustration, vertical portrait 9:16 composition, "
-        "family-friendly animated movie look, expressive appealing characters, detailed storybook environments, "
-        "bright rich colors, soft cinematic lighting, polished smooth 3D animation style. "
+        "Premium high-detail colorful 3D animated film still, vertical portrait 9:16 composition, crisp clean rendering, sharp focus, finely detailed faces, expressive eyes, natural anatomy, rich textures, professional character design, beautifully detailed background, balanced composition, soft cinematic lighting, vibrant but controlled colors, polished studio-quality cartoon animation, "
+        "family-friendly feature-animation look, expressive appealing characters, detailed storybook environments, clear foreground and background separation, "
+        "bright rich colors, soft cinematic lighting, polished smooth 3D animation style, high visual fidelity. "
         "Create one clear visual scene matching this exact story moment. Each scene must show a different action, "
         "pose, camera angle, and setting detail while keeping the same main characters, clothing, colors, and appearance "
         "consistent across all scenes. No photorealism, no text, no letters, no captions, no logos, no watermark, no collage. "
@@ -66,11 +66,12 @@ def generate_horde_image(prompt, destination, index):
             json={
                 "prompt": prompt,
                 "params": {
-                    "width": 512,
-                    "height": 768,
-                    "steps": 20,
+                    "width": 640,
+                    "height": 1152,
+                    "steps": 30,
                     "n": 1,
-                    "cfg_scale": 7,
+                    "cfg_scale": 7.5,
+                    "negative_prompt": "blurry, low resolution, pixelated, noisy, distorted face, deformed hands, extra fingers, extra limbs, duplicate characters, bad anatomy, flat lighting, washed out colors, text, letters, watermark, logo",
                     "sampler_name": "k_euler",
                     "karras": True
                 },
