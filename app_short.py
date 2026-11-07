@@ -13,7 +13,8 @@ MAX_ATTEMPTS = 3
 def generate_story():
     prompt = """
 Write an original, engaging English short story for YouTube.
-Target narration length: approximately 45 to 60 seconds.
+Target narration length: approximately 50 to 65 seconds.
+Structure the narration as 5 clear visual story moments, with 5 to 7 concise sentences so the video can use exactly 5 different illustrated scenes.
 Include a catchy title and a positive, meaningful ending.
 Return a JSON object with exactly these keys:
 "title": a short video title
