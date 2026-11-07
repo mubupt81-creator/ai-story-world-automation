@@ -1,11 +1,12 @@
 import asyncio
+import base64
+import os
 import json
 import math
 import re
 import subprocess
 import time
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -14,16 +15,11 @@ import edge_tts
 VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT, FPS = 1080, 1920, 24
 SCENE_COUNT = 4
-HORDE_API = "https://aihorde.net/api/v2"
-HORDE_KEY = "0000000000"  # AI Horde anonymous, volunteer-powered free access
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
+CLOUDFLARE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b"
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
-SESSION = requests.Session()
-SESSION.headers.update({
-    "apikey": HORDE_KEY,
-    "Client-Agent": "AIStoryWorld:1.0:GitHubActions"
-})
-
 
 def load_story():
     data = json.loads(Path("story.txt").read_text(encoding="utf-8"))
@@ -58,62 +54,47 @@ def scene_prompt(title, excerpt, index):
         f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
 
-def generate_horde_image(prompt, destination, index):
-    """Try the free volunteer AI Horde. If unavailable, local visuals keep the run alive."""
-    try:
-        response = SESSION.post(
-            f"{HORDE_API}/generate/async",
-            json={
-                "prompt": prompt,
-                "params": {
-                    "width": 640,
-                    "height": 1152,
-                    "steps": 30,
-                    "n": 1,
-                    "cfg_scale": 7.5,
-                    "negative_prompt": "blurry, low resolution, pixelated, noisy, distorted face, deformed hands, extra fingers, extra limbs, duplicate characters, bad anatomy, flat lighting, washed out colors, text, letters, watermark, logo",
-                    "sampler_name": "k_euler",
-                    "karras": True
-                },
-                "nsfw": False,
-                "censor_nsfw": True,
-                "models": ["stable_diffusion"]
-            },
-            timeout=30
+def generate_cloudflare_image(prompt, destination, index):
+    """Generate one portrait cartoon scene at a time with Cloudflare Workers AI."""
+    if not CLOUDFLARE_ACCOUNT_ID or not CLOUDFLARE_API_TOKEN:
+        raise RuntimeError(
+            "Cloudflare setup is incomplete. Add CLOUDFLARE_ACCOUNT_ID and "
+            "CLOUDFLARE_API_TOKEN to GitHub Actions secrets."
         )
-        response.raise_for_status()
-        request_id = response.json().get("id")
-        if not request_id:
-            raise RuntimeError("AI Horde did not return a generation ID.")
 
-        deadline = time.time() + 90
-        while time.time() < deadline:
-            time.sleep(5)
-            check = SESSION.get(f"{HORDE_API}/generate/check/{request_id}", timeout=30)
-            check.raise_for_status()
-            status = check.json()
-            if status.get("faulted"):
-                raise RuntimeError("AI Horde generation was faulted.")
-            if status.get("done"):
-                result = SESSION.get(f"{HORDE_API}/generate/status/{request_id}", timeout=30)
-                result.raise_for_status()
-                generations = result.json().get("generations", [])
-                if not generations or not generations[0].get("img"):
-                    raise RuntimeError("AI Horde returned no image.")
-                image_response = requests.get(generations[0]["img"], timeout=60)
-                image_response.raise_for_status()
-                destination.write_bytes(image_response.content)
-                with Image.open(destination) as check_image:
-                    check_image.verify()
-                print(f"SUCCESS: AI cinematic image generated for scene {index + 1}.")
-                return True
-        raise TimeoutError("AI Horde image request timed out after 25 seconds.")
+    endpoint = (
+        f"https://api.cloudflare.com/client/v4/accounts/"
+        f"{CLOUDFLARE_ACCOUNT_ID}/ai/run/{CLOUDFLARE_MODEL}"
+    )
+    headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"}
+    form = {
+        "prompt": prompt,
+        "width": "768",
+        "height": "1344",
+        "guidance": "4",
+    }
+
+    try:
+        response = requests.post(endpoint, headers=headers, data=form, timeout=(30, 240))
+        if not response.ok:
+            raise RuntimeError(
+                f"Cloudflare image API returned HTTP {response.status_code}: "
+                f"{response.text[:500]}"
+            )
+        payload = response.json()
+        image_b64 = (payload.get("result") or {}).get("image")
+        if not image_b64:
+            raise RuntimeError(f"Cloudflare returned no image data: {json.dumps(payload)[:500]}")
+        destination.write_bytes(base64.b64decode(image_b64, validate=True))
+        with Image.open(destination) as generated:
+            generated.verify()
+        print(f"SUCCESS: Cloudflare FLUX.2 cartoon image generated for scene {index + 1}.")
+        return True
     except Exception as error:
         raise RuntimeError(
-            f"Real AI-generated image unavailable for scene {index + 1}; "
+            f"AI-generated image unavailable for scene {index + 1}; "
             "stopping instead of creating a text/gradient fallback."
         ) from error
-
 
 def make_fallback_image(title, excerpt, index, path):
     # Offline fallback: cinematic atmospheric artwork, not an AI-generated image.
@@ -171,9 +152,9 @@ def make_video(title, story):
     for i, excerpt in enumerate(scenes):
         image_path = OUT / f"scene_{i + 1:02d}.jpg"
         prompt = scene_prompt(title, excerpt, i)
-        if not generate_horde_image(prompt, image_path, i):
+        if not generate_cloudflare_image(prompt, image_path, i):
             raise RuntimeError(f"Scene {i + 1} did not receive a real AI-generated image.")
-        # AI Horde returns square images; crop to a cinematic 16:9 frame.
+        # Crop the generated portrait image to the final vertical Short frame.
         with Image.open(image_path) as source:
             source = source.convert("RGB")
             sw, sh = source.size
