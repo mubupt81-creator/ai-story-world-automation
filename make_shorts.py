@@ -14,7 +14,7 @@ import edge_tts
 
 VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT, FPS = 1080, 1920, 24
-SCENE_COUNT = 4
+SCENE_COUNT = 5
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
 CLOUDFLARE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b"
@@ -73,7 +73,8 @@ def generate_cloudflare_image(prompt, destination, index):
     safe_scenes = [
         "a curious young explorer discovering a glowing compass in a sunny forest clearing",
         "the same young explorer following a winding path through a colorful garden",
-        "the same young explorer meeting a friendly wise guide beside a sparkling river",
+        "the same young explorer crossing a small wooden bridge over a sparkling river",
+        "the same young explorer meeting a friendly wise guide beside a flowering tree",
         "the same young explorer smiling on a hilltop at golden sunset, feeling hopeful",
     ]
     prompts = [
@@ -211,7 +212,7 @@ def make_video(title, story):
             source.save(image_path, quality=94)
         image_paths.append(image_path)
 
-    # Four story-matched stills receive slow cinematic Ken Burns movement and soft fades.
+    # Five story-matched stills receive slow cinematic Ken Burns movement and soft fades.
     inputs = []
     filters = []
     labels = []
