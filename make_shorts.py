@@ -108,9 +108,10 @@ def generate_horde_image(prompt, destination, index):
                 return True
         raise TimeoutError("AI Horde image request timed out after 25 seconds.")
     except Exception as error:
-        print(f"NOTICE: AI image unavailable for scene {index + 1}: {error}")
-        print("Using a locally generated cinematic fallback for this scene.")
-        return False
+        raise RuntimeError(
+            f"Real AI-generated image unavailable for scene {index + 1}; "
+            "stopping instead of creating a text/gradient fallback."
+        ) from error
 
 
 def make_fallback_image(title, excerpt, index, path):
@@ -170,7 +171,7 @@ def make_video(title, story):
         image_path = OUT / f"scene_{i + 1:02d}.jpg"
         prompt = scene_prompt(title, excerpt, i)
         if not generate_horde_image(prompt, image_path, i):
-            make_fallback_image(title, excerpt, i, image_path)
+            raise RuntimeError(f"Scene {i + 1} did not receive a real AI-generated image.")
         # AI Horde returns square images; crop to a cinematic 16:9 frame.
         with Image.open(image_path) as source:
             source = source.convert("RGB")
