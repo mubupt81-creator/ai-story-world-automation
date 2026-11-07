@@ -17,6 +17,7 @@ def main():
     title = str(data.get("title", "AI Story World"))[:100]
     description = (
         str(data.get("story", ""))[:4000]
+        + "\n\n#AIStory #ShortStory #StoryTime"
         + "\n\nCreated automatically by AI Story World."
     )
 
@@ -44,11 +45,11 @@ def main():
             "snippet": {
                 "title": title,
                 "description": description,
-                "tags": ["AI Story World", "English Story", "Short Story"],
+                "tags": ["AI Story World", "English Story", "Short Story", "StoryTime", "AI Story"],
                 "categoryId": "22",
             },
             "status": {
-                "privacyStatus": "private",
+                "privacyStatus": "public",
                 "selfDeclaredMadeForKids": False,
             },
         },
@@ -59,7 +60,7 @@ def main():
         status, response = request.next_chunk()
         if status:
             print(f"YouTube upload: {int(status.progress() * 100)}%")
-    print("SUCCESS: Video uploaded to YouTube as PRIVATE.")
+    print("SUCCESS: Video uploaded to YouTube as PUBLIC.")
     print("Video ID:", response["id"])
     print("URL: https://www.youtube.com/watch?v=" + response["id"])
 
