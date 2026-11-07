@@ -75,7 +75,8 @@ def generate_cloudflare_image(prompt, destination, index):
     }
 
     try:
-        response = requests.post(endpoint, headers=headers, data=form, timeout=(30, 240))
+        multipart_fields = {key: (None, value) for key, value in form.items()}
+        response = requests.post(endpoint, headers=headers, files=multipart_fields, timeout=(30, 240))
         if not response.ok:
             raise RuntimeError(
                 f"Cloudflare image API returned HTTP {response.status_code}: "
