@@ -13,7 +13,7 @@ import edge_tts
 
 VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT, FPS = 1280, 720, 24
-SCENE_COUNT = 5
+SCENE_COUNT = 10
 HORDE_API = "https://aihorde.net/api/v2"
 HORDE_KEY = "0000000000"  # AI Horde anonymous, volunteer-powered free access
 OUT = Path("output")
@@ -199,7 +199,7 @@ def make_video(title, story):
             source.save(image_path, quality=94)
         image_paths.append(image_path)
 
-    # Each still receives a slow cinematic Ken Burns camera move and soft fades.
+    # Ten story-matched stills receive slow cinematic Ken Burns camera movement and soft fades.
     inputs = []
     filters = []
     labels = []
