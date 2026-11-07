@@ -49,14 +49,14 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "Cinematic photorealistic movie still, vertical portrait 9:16 composition, "
-        "professional cinematography, natural realistic lighting, rich but natural colors, "
-        "subtle film grain, detailed real-world environment, emotionally expressive scene. "
-        "Create a visually distinct cinematic scene for this exact story moment. Each scene must have different characters' poses, camera angle, setting details, and action matching its excerpt. Keep the same main characters visually consistent across scenes. "
-        "No text, no letters, no captions, no logos, no watermark, no collage. "
+        "High-quality colorful 3D cartoon story illustration, vertical portrait 9:16 composition, "
+        "family-friendly animated movie look, expressive appealing characters, detailed storybook environments, "
+        "bright rich colors, soft cinematic lighting, polished smooth 3D animation style. "
+        "Create one clear visual scene matching this exact story moment. Each scene must show a different action, "
+        "pose, camera angle, and setting detail while keeping the same main characters, clothing, colors, and appearance "
+        "consistent across all scenes. No photorealism, no text, no letters, no captions, no logos, no watermark, no collage. "
         f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
-
 
 def generate_horde_image(prompt, destination, index):
     """Try the free volunteer AI Horde. If unavailable, local visuals keep the run alive."""
