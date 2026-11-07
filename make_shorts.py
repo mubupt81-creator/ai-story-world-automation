@@ -13,7 +13,7 @@ import edge_tts
 
 VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT, FPS = 1080, 1920, 24
-SCENE_COUNT = 3
+SCENE_COUNT = 4
 HORDE_API = "https://aihorde.net/api/v2"
 HORDE_KEY = "0000000000"  # AI Horde anonymous, volunteer-powered free access
 OUT = Path("output")
@@ -52,7 +52,7 @@ def scene_prompt(title, excerpt, index):
         "Cinematic photorealistic movie still, vertical portrait 9:16 composition, "
         "professional cinematography, natural realistic lighting, rich but natural colors, "
         "subtle film grain, detailed real-world environment, emotionally expressive scene. "
-        "Create a single coherent visual moment inspired by this story. "
+        "Create a visually distinct cinematic scene for this exact story moment. Each scene must have different characters' poses, camera angle, setting details, and action matching its excerpt. Keep the same main characters visually consistent across scenes. "
         "No text, no letters, no captions, no logos, no watermark, no collage. "
         f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
@@ -85,7 +85,7 @@ def generate_horde_image(prompt, destination, index):
         if not request_id:
             raise RuntimeError("AI Horde did not return a generation ID.")
 
-        deadline = time.time() + 25
+        deadline = time.time() + 90
         while time.time() < deadline:
             time.sleep(5)
             check = SESSION.get(f"{HORDE_API}/generate/check/{request_id}", timeout=30)
@@ -130,22 +130,11 @@ def make_fallback_image(title, excerpt, index, path):
         h = 100 + ((x * 17 + index * 53) % 170)
         draw.rectangle((x, HEIGHT - h, x + 65, HEIGHT), fill=(4, 8, 20, 175))
     draw.rectangle((0, 600, WIDTH, HEIGHT), fill=(3, 7, 18, 180))
-    title_font = get_font(32, True)
-    body_font = get_font(24)
-    draw.text((72, 68), title[:55], font=title_font, fill=(255, 225, 190, 245))
-    words = excerpt.split()
-    lines, line = [], ""
-    for word in words:
-        trial = (line + " " + word).strip()
-        if draw.textbbox((0, 0), trial, font=body_font)[2] < 1040:
-            line = trial
-        else:
-            lines.append(line)
-            line = word
-    if line:
-        lines.append(line)
-    for j, text in enumerate(lines[:3]):
-        draw.text((74, 540 + j * 34), text, font=body_font, fill=(255, 255, 255, 235))
+    # Keep fallback artwork image-led: no story paragraphs or text-only screens.
+    # Add atmospheric foreground shapes so the fallback remains a visual scene.
+    draw.ellipse((120, 1040, 520, 1510), fill=(18, 24, 38, 210))
+    draw.ellipse((300, 900, 610, 1320), fill=(28, 35, 52, 225))
+    draw.polygon([(0, 1500), (250, 1120), (520, 1500)], fill=(8, 13, 25, 230))
     image = image.filter(ImageFilter.GaussianBlur(0.25))
     image.save(path, quality=92)
 
@@ -199,7 +188,7 @@ def make_video(title, story):
             source.save(image_path, quality=94)
         image_paths.append(image_path)
 
-    # Each still receives a slow cinematic Ken Burns camera move and soft fades.
+    # Four story-matched stills receive slow cinematic Ken Burns movement and soft fades.
     inputs = []
     filters = []
     labels = []
