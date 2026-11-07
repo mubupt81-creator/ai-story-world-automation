@@ -55,7 +55,7 @@ def scene_prompt(title, excerpt, index):
     )
 
 def generate_cloudflare_image(prompt, destination, index):
-    """Generate one portrait cartoon scene at a time with Cloudflare Workers AI."""
+    """Generate one portrait cartoon scene with safe prompt retries."""
     if not CLOUDFLARE_ACCOUNT_ID or not CLOUDFLARE_API_TOKEN:
         raise RuntimeError(
             "Cloudflare setup is incomplete. Add CLOUDFLARE_ACCOUNT_ID and "
@@ -67,35 +67,74 @@ def generate_cloudflare_image(prompt, destination, index):
         f"{CLOUDFLARE_ACCOUNT_ID}/ai/run/{CLOUDFLARE_MODEL}"
     )
     headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"}
-    form = {
-        "prompt": prompt,
-        "width": "768",
-        "height": "1344",
-        "guidance": "4",
-    }
 
-    try:
-        multipart_fields = {key: (None, value) for key, value in form.items()}
-        response = requests.post(endpoint, headers=headers, files=multipart_fields, timeout=(30, 240))
-        if not response.ok:
-            raise RuntimeError(
-                f"Cloudflare image API returned HTTP {response.status_code}: "
-                f"{response.text[:500]}"
+    # If the story-specific prompt is blocked by the image safety filter,
+    # retry with a neutral family-friendly visual prompt for that scene.
+    safe_scenes = [
+        "a curious young explorer discovering a glowing compass in a sunny forest clearing",
+        "the same young explorer following a winding path through a colorful garden",
+        "the same young explorer meeting a friendly wise guide beside a sparkling river",
+        "the same young explorer smiling on a hilltop at golden sunset, feeling hopeful",
+    ]
+    prompts = [
+        prompt,
+        (
+            "Family-friendly colorful 3D animated movie illustration, portrait 9:16. "
+            "A cheerful young explorer with consistent simple clothing and appearance, "
+            + safe_scenes[index % len(safe_scenes)]
+            + ". Warm positive mood, expressive friendly face, detailed storybook "
+            "environment, polished high-quality cartoon rendering, soft cinematic "
+            "lighting. No text, no letters, no logos, no watermark, no violence."
+        ),
+    ]
+
+    last_error = None
+    for attempt, current_prompt in enumerate(prompts, start=1):
+        form = {
+            "prompt": current_prompt,
+            "width": "768",
+            "height": "1344",
+            "guidance": "4",
+        }
+        try:
+            multipart_fields = {key: (None, value) for key, value in form.items()}
+            response = requests.post(
+                endpoint, headers=headers, files=multipart_fields, timeout=(30, 240)
             )
-        payload = response.json()
-        image_b64 = (payload.get("result") or {}).get("image")
-        if not image_b64:
-            raise RuntimeError(f"Cloudflare returned no image data: {json.dumps(payload)[:500]}")
-        destination.write_bytes(base64.b64decode(image_b64, validate=True))
-        with Image.open(destination) as generated:
-            generated.verify()
-        print(f"SUCCESS: Cloudflare FLUX.2 cartoon image generated for scene {index + 1}.")
-        return True
-    except Exception as error:
-        raise RuntimeError(
-            f"AI-generated image unavailable for scene {index + 1}; "
-            "stopping instead of creating a text/gradient fallback."
-        ) from error
+            if not response.ok:
+                detail = response.text[:500]
+                # Only retry a flagged prompt; other API errors need configuration fixes.
+                if response.status_code == 400 and "flagged" in detail.lower() and attempt < len(prompts):
+                    print(f"WARNING: Scene {index + 1} prompt was flagged; retrying with a safer prompt.")
+                    last_error = RuntimeError(f"Cloudflare safety filter: {detail}")
+                    time.sleep(2)
+                    continue
+                raise RuntimeError(
+                    f"Cloudflare image API returned HTTP {response.status_code}: {detail}"
+                )
+            payload = response.json()
+            image_b64 = (payload.get("result") or {}).get("image")
+            if not image_b64:
+                raise RuntimeError(
+                    f"Cloudflare returned no image data: {json.dumps(payload)[:500]}"
+                )
+            destination.write_bytes(base64.b64decode(image_b64, validate=True))
+            with Image.open(destination) as generated:
+                generated.verify()
+            print(f"SUCCESS: Cloudflare cartoon image generated for scene {index + 1} (attempt {attempt}).")
+            return True
+        except Exception as error:
+            last_error = error
+            if attempt >= len(prompts):
+                break
+            raise RuntimeError(
+                f"Cloudflare image generation failed for scene {index + 1}: {error}"
+            ) from error
+
+    raise RuntimeError(
+        f"AI-generated image unavailable for scene {index + 1} after safe retry; "
+        "stopping instead of creating a text/gradient fallback."
+    ) from last_error
 
 def make_fallback_image(title, excerpt, index, path):
     # Offline fallback: cinematic atmospheric artwork, not an AI-generated image.
