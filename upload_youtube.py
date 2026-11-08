@@ -8,6 +8,24 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 
+def make_hashtags(title, story):
+    import re
+    stop = {"about", "after", "again", "could", "every", "first", "found", "their",
+            "there", "these", "thing", "through", "under", "until", "where", "which",
+            "while", "would", "young", "story", "stories", "with", "from", "that",
+            "this", "then", "them", "they", "when", "what", "were", "have", "into"}
+    words = re.findall(r"[A-Za-z]{4,}", f"{title} {story}".lower())
+    chosen = []
+    for word in words:
+        if word not in stop and word not in chosen:
+            chosen.append(word)
+        if len(chosen) == 4:
+            break
+    tags = ["#AIStory", "#StoryTime", "#ShortStory", "#AnimatedStory"]
+    tags.extend("#" + word.title().replace(" ", "") for word in chosen)
+    return " ".join(tags[:8])
+
+
 def main():
     video = Path("output/ai_story_video.mp4")
     story_file = Path("story.txt")
@@ -15,9 +33,11 @@ def main():
         raise FileNotFoundError("Video file is missing or too small.")
     data = json.loads(story_file.read_text(encoding="utf-8"))
     title = str(data.get("title", "AI Story World"))[:100]
+    story = str(data.get("story", ""))
+    hashtags = make_hashtags(title, story)
     description = (
-        str(data.get("story", ""))[:4000]
-        + "\n\n#AIStory #ShortStory #StoryTime"
+        story[:4000]
+        + "\n\n" + hashtags
         + "\n\nCreated automatically by AI Story World."
     )
 
@@ -45,7 +65,7 @@ def main():
             "snippet": {
                 "title": title,
                 "description": description,
-                "tags": ["AI Story World", "English Story", "Short Story", "StoryTime", "AI Story"],
+                "tags": ["AI Story World", "English Story", "Short Story", "StoryTime", "AI Story"] + [tag.lstrip("#") for tag in hashtags.split()],
                 "categoryId": "22",
             },
             "status": {
