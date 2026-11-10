@@ -12,12 +12,14 @@ MAX_ATTEMPTS = 3
 
 def generate_story():
     prompt = """
-Write an original, engaging English story for a YouTube video.
-Target narration length: approximately 2 minutes.
-Open with a compelling visual mystery, surprising question, or emotional moment in the first sentence. Do not begin with a greeting or channel introduction.
-Structure the narration as 10 clear visual story moments, with enough concise sentences for 10 different cinematic images.
-Keep the plot easy to follow, build curiosity throughout, and end with a satisfying twist or meaningful emotional payoff.
-Include a catchy, specific title and a positive, meaningful ending.
+Write an original English Mystery + Monster Adventure story for a YouTube video.
+The narration MUST contain 230 to 260 words (aim for about 245 words, suitable for approximately 2 minutes of natural narration).
+Begin with an immediate cinematic mystery or monster encounter in the first sentence. No greeting or channel introduction.
+Create a unique monster with a memorable visual design, clear motive, and personality; describe its appearance clearly enough that it can be illustrated consistently.
+Build a complete adventure with clues, rising suspense, a discovery, a clever turning point, and a satisfying final reveal.
+Plan exactly 10 distinct visual story moments for 10 cinematic images. Keep the same monster and main characters visually consistent throughout.
+Keep it family-friendly: suspenseful and thrilling, but no graphic violence or gore. Use original settings, names, and monster concepts; avoid repetitive generic plots.
+End with a memorable payoff. Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
 "story": the complete narration
