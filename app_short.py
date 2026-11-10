@@ -12,12 +12,14 @@ MAX_ATTEMPTS = 3
 
 def generate_story():
     prompt = """
-Write an original, engaging English short story for YouTube Shorts.
-Target narration length: approximately 50 to 65 seconds.
-Open with an intriguing one-sentence hook in the very first line. Do not begin with a greeting, channel introduction, or slow setup.
-Structure the narration as 5 clear visual story moments, with 7 to 10 concise, easy-to-understand sentences so the video can use exactly 5 different illustrated scenes.
-Build curiosity in the opening, maintain clear cause-and-effect, and finish with a satisfying twist or meaningful emotional payoff.
-Include a catchy, specific title and a positive, meaningful ending.
+Write an original English Mystery + Monster Adventure story for YouTube Shorts.
+The narration MUST contain 120 to 140 words (aim for about 130 words, suitable for 50–65 seconds when narrated).
+Open with a powerful mystery or danger hook in the first sentence. No greeting, channel introduction, or slow setup.
+Include one original, memorable monster with a distinctive visual appearance and personality. Keep the monster's identity and appearance consistent throughout the story.
+Build suspense, clues, discovery, and a surprising but satisfying reveal. Keep it family-friendly: spooky and exciting, never graphic or gory.
+Structure the story into 5 clear visual moments, with 8–11 concise sentences. End with a strong payoff that makes viewers want to watch to the end.
+Use a fresh setting, monster design, and human character names each time. Avoid repeating familiar generic plots.
+Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
 "story": the complete narration
