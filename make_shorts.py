@@ -45,12 +45,15 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "Premium high-detail colorful 3D animated film still, vertical portrait 9:16 composition, crisp clean rendering, sharp focus, finely detailed faces, expressive eyes, natural anatomy, rich textures, professional character design, beautifully detailed background, balanced composition, soft cinematic lighting, vibrant but controlled colors, polished studio-quality cartoon animation, "
-        "family-friendly feature-animation look, expressive appealing characters, detailed storybook environments, clear foreground and background separation, "
-        "bright rich colors, soft cinematic lighting, polished smooth 3D animation style, high visual fidelity. "
-        "Create one clear visual scene matching this exact story moment. Each scene must show a different action, "
-        "pose, camera angle, and setting detail while keeping the same main characters, clothing, colors, and appearance "
-        "consistent across all scenes. No photorealism, no text, no letters, no captions, no logos, no watermark, no collage. "
+        "Premium high-detail colorful 3D animated mystery-adventure film still, vertical portrait 9:16 composition, "
+        "polished studio-quality feature animation, expressive characters, detailed fantasy environments, dramatic "
+        "cinematic lighting, rich colors, sharp focus, clear foreground and background separation. "
+        "Show an exciting but family-friendly monster adventure: mysterious forests, abandoned castles, hidden caves, "
+        "ancient clues, glowing objects, and suspenseful discoveries when appropriate to this exact scene. "
+        "The SAME original monster must appear consistently whenever present: preserve its exact species, body shape, "
+        "face, eyes, skin or fur colors, markings, size, and any distinctive features established by the story. "
+        "Keep human characters, clothing, and colors consistent too. Each image is a different story moment and camera "
+        "angle, not a collage. No photorealism, gore, text, letters, captions, logos, or watermark. "
         f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
 
@@ -71,17 +74,17 @@ def generate_cloudflare_image(prompt, destination, index):
     # If the story-specific prompt is blocked by the image safety filter,
     # retry with a neutral family-friendly visual prompt for that scene.
     safe_scenes = [
-        "a curious young explorer discovering a glowing compass in a sunny forest clearing",
-        "the same young explorer following a winding path through a colorful garden",
-        "the same young explorer crossing a small wooden bridge over a sparkling river",
-        "the same young explorer meeting a friendly wise guide beside a flowering tree",
-        "the same young explorer smiling on a hilltop at golden sunset, feeling hopeful",
+        "the same small mysterious fantasy monster with glowing blue eyes and soft purple fur peeking from behind an ancient tree while a young explorer watches from a safe distance",
+        "the same small purple-furred monster leaving glowing footprints along a moonlit forest path",
+        "the same small purple-furred monster revealing a tiny magical key beside a ruined stone bridge",
+        "the same small purple-furred monster guiding the young explorer toward a hidden glowing doorway",
+        "the same small purple-furred monster and young explorer standing together beneath a starry sky",
     ]
     prompts = [
         prompt,
         (
             "Family-friendly colorful 3D animated movie illustration, portrait 9:16. "
-            "A cheerful young explorer with consistent simple clothing and appearance, "
+            "A consistent family-friendly monster mystery scene with the same young explorer and recurring small purple-furred monster, "
             + safe_scenes[index % len(safe_scenes)]
             + ". Warm positive mood, expressive friendly face, detailed storybook "
             "environment, polished high-quality cartoon rendering, soft cinematic "
