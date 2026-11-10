@@ -49,11 +49,14 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "Cinematic photorealistic movie still, widescreen film composition, "
-        "professional cinematography, natural realistic lighting, rich but natural colors, "
-        "subtle film grain, detailed real-world environment, emotionally expressive scene. "
-        "Create a single coherent visual moment inspired by this story. "
-        "No text, no letters, no captions, no logos, no watermark, no collage. "
+        "Cinematic widescreen fantasy mystery-adventure movie still, 16:9 film composition, "
+        "professional cinematography, dramatic atmospheric lighting, rich detailed environments, "
+        "realistic textures, expressive characters, suspenseful but family-friendly monster adventure. "
+        "Depict the exact story moment with the SAME original monster design in every scene: preserve its "
+        "distinctive body shape, face, eyes, colors, markings, scale, and recognizable features whenever it appears. "
+        "Keep the same human characters and clothing consistent across the story. "
+        "Use mysterious locations, clues, hidden passages, and cinematic discoveries when relevant. "
+        "No gore, text, letters, captions, logos, watermark, or collage. "
         f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
 
