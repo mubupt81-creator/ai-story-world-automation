@@ -36,9 +36,13 @@ def main():
     story = str(data.get("story", ""))
     hashtags = make_hashtags(title, story)
     description = (
-        story[:4000]
-        + "\n\n" + hashtags
-        + "\n\nCreated automatically by AI Story World."
+        f"{title} | Mystery & Monster Adventure\\n\\n"
+        "Step into an original adventure filled with hidden clues, mysterious creatures, "
+        "unexpected discoveries and a surprising twist. Watch the full story to uncover the mystery.\\n\\n"
+        + story[:3500]
+        + "\\n\\nWhich moment surprised you most? Share your theory in the comments!\\n\\n"
+        "Subscribe to AI Story World for more original mystery, monster and fantasy adventures.\\n\\n"
+        + hashtags
     )
 
     client_id = os.environ.get("YOUTUBE_CLIENT_ID")
