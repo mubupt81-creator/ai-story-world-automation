@@ -45,16 +45,16 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "Premium high-detail colorful 3D animated mystery-adventure film still, vertical portrait 9:16 composition, "
-        "polished studio-quality feature animation, expressive characters, detailed fantasy environments, dramatic "
-        "cinematic lighting, rich colors, sharp focus, clear foreground and background separation. "
-        "Show an exciting but family-friendly monster adventure: mysterious forests, abandoned castles, hidden caves, "
-        "ancient clues, glowing objects, and suspenseful discoveries when appropriate to this exact scene. "
-        "The SAME original monster must appear consistently whenever present: preserve its exact species, body shape, "
-        "face, eyes, skin or fur colors, markings, size, and any distinctive features established by the story. "
-        "Keep human characters, clothing, and colors consistent too. Each image is a different story moment and camera "
-        "angle, not a collage. No photorealism, gore, text, letters, captions, logos, or watermark. "
-        f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
+        "High-quality colorful 3D family cartoon comedy frame, vertical 9:16, polished theatrical animation, "
+        "bright playful lighting, expressive faces, squash-and-stretch poses, clear readable physical comedy, "
+        "rich colorful setting, crisp character silhouettes and detailed props. "
+        "Always use the exact same two original characters: Bop is a plump orange cat with a cream muzzle, "
+        "amber eyes and a tiny green collar; Pip is a tiny teal-blue mouse with large ears and a red scarf. "
+        "Preserve their exact colors, body proportions, facial features and accessories in every image. "
+        "Show the specific funny action in this scene: chase, harmless pratfall, clever trick, funny surprise, "
+        "or exaggerated reaction. Each image is one clear action moment, not a collage. "
+        "No photorealism, no text, letters, captions, logos, watermark, injury or violence. "
+        f"Episode title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
 
 def generate_cloudflare_image(prompt, destination, index):
@@ -74,11 +74,11 @@ def generate_cloudflare_image(prompt, destination, index):
     # If the story-specific prompt is blocked by the image safety filter,
     # retry with a neutral family-friendly visual prompt for that scene.
     safe_scenes = [
-        "the same small mysterious fantasy monster with glowing blue eyes and soft purple fur peeking from behind an ancient tree while a young explorer watches from a safe distance",
-        "the same small purple-furred monster leaving glowing footprints along a moonlit forest path",
-        "the same small purple-furred monster revealing a tiny magical key beside a ruined stone bridge",
-        "the same small purple-furred monster guiding the young explorer toward a hidden glowing doorway",
-        "the same small purple-furred monster and young explorer standing together beneath a starry sky",
+        "the same plump orange cartoon cat with a cream muzzle, amber eyes and tiny green collar peeking around a kitchen door while a tiny teal-blue mouse with large ears and a red scarf hides behind a cheese wedge",
+        "the same orange cartoon cat tiptoeing across a bright kitchen while the tiny teal-blue mouse quietly swaps the cat's slippers for oversized roller skates",
+        "the tiny teal-blue mouse proudly showing a tiny spring-loaded toy while the orange cat looks confused in a colorful living room",
+        "the tiny teal-blue mouse zooming past on a toy car as the orange cat slides harmlessly across a polished kitchen floor, surprised expression",
+        "the orange cat and tiny teal-blue mouse sharing a funny triumphant pose beside a toppled stack of pillows in a sunny cartoon room",
     ]
     prompts = [
         prompt,
