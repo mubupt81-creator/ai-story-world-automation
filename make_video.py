@@ -49,15 +49,16 @@ def split_story(story, count=SCENE_COUNT):
 
 def scene_prompt(title, excerpt, index):
     return (
-        "Cinematic widescreen fantasy mystery-adventure movie still, 16:9 film composition, "
-        "professional cinematography, dramatic atmospheric lighting, rich detailed environments, "
-        "realistic textures, expressive characters, suspenseful but family-friendly monster adventure. "
-        "Depict the exact story moment with the SAME original monster design in every scene: preserve its "
-        "distinctive body shape, face, eyes, colors, markings, scale, and recognizable features whenever it appears. "
-        "Keep the same human characters and clothing consistent across the story. "
-        "Use mysterious locations, clues, hidden passages, and cinematic discoveries when relevant. "
-        "No gore, text, letters, captions, logos, watermark, or collage. "
-        f"Story title: {title}. Scene {index + 1}: {excerpt[:650]}"
+        "Premium widescreen 16:9 3D animated family cartoon comedy frame, colorful theatrical animation, "
+        "bright cinematic lighting, playful staging, expressive faces, exaggerated squash-and-stretch poses, "
+        "clear physical comedy and detailed cheerful environments. "
+        "Always depict the exact same original characters: Bop, a plump orange cat with cream muzzle, "
+        "amber eyes and tiny green collar; Pip, a tiny teal-blue mouse with large ears and red scarf. "
+        "Keep their character designs, colors, proportions and accessories identical across all scenes. "
+        "Illustrate one clear action from this episode: a funny chase, harmless pratfall, clever trick, "
+        "comic reaction or unexpected visual gag. No collage, text, letters, captions, logos, watermark, "
+        "photorealism, injury or violence. "
+        f"Episode title: {title}. Scene {index + 1}: {excerpt[:650]}"
     )
 
 
