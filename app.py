@@ -12,14 +12,11 @@ MAX_ATTEMPTS = 3
 
 def generate_story():
     prompt = """
-Write an original English Mystery + Monster Adventure story for a YouTube video.
+Write an original English cartoon comedy episode for a YouTube video featuring the same two original recurring characters: Bop, a plump orange cat with a cream muzzle, amber eyes and a tiny green collar; and Pip, a tiny clever teal-blue mouse with large ears and a red scarf. Keep their colors, proportions, faces and accessories identical throughout.
 The narration MUST contain 230 to 260 words (aim for about 245 words, suitable for approximately 2 minutes of natural narration).
-Begin with an immediate cinematic mystery or monster encounter in the first sentence. No greeting or channel introduction.
-Create a unique monster with a memorable visual design, clear motive, and personality; describe its appearance clearly enough that it can be illustrated consistently.
-Build a complete adventure with clues, rising suspense, a discovery, a clever turning point, and a satisfying final reveal.
-Plan exactly 10 distinct visual story moments for 10 cinematic images. Keep the same monster and main characters visually consistent throughout.
-Keep it family-friendly: suspenseful and thrilling, but no graphic violence or gore. Use original settings, names, and monster concepts; avoid repetitive generic plots.
-End with a memorable payoff. Include a catchy, specific title.
+Start with an immediate funny visual mishap or chase. No greeting or channel introduction. Build a clear comic setup, escalating harmless slapstick, clever mouse tricks, ridiculous cat reactions, playful physical comedy, silly props and visual gags, ending in a surprising laugh.
+Plan exactly 10 distinct visual story moments. Each scene must show one clear action that can be understood visually. Use a fresh location and comic situation each episode, but never change Bop or Pip's character designs.
+Keep it cheerful and family-friendly: no graphic injury or cruelty. Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
 "story": the complete narration
