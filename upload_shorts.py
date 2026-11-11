@@ -21,7 +21,7 @@ def make_hashtags(title, story):
             chosen.append(word)
         if len(chosen) == 4:
             break
-    tags = ["#Shorts", "#AIStory", "#StoryTime", "#ShortStory"]
+    tags = ["#Shorts", "#FunnyCartoon", "#CatAndMouse", "#CartoonComedy"]
     tags.extend("#" + word.title().replace(" ", "") for word in chosen)
     return " ".join(tags[:8])
 
@@ -36,12 +36,12 @@ def main():
     story = str(data.get("story", ""))
     hashtags = make_hashtags(title, story)
     description = (
-        f"{title.replace(' #Shorts', '')} | Mystery & Monster Adventure\n\n"
-        "A strange mystery. A creature no one expected. One adventure with a twist! "
-        "Watch until the end to discover what really happened.\n\n"
+        f"{title.replace(' #Shorts', '')} | Funny Cat & Mouse Cartoon\n\n"
+        "Bop the playful orange cat and Pip the clever little mouse are back with a brand-new funny chase! "
+        "Expect silly tricks, hilarious reactions and a surprise ending.\n\n"
         + story[:3500]
-        + "\n\nWhat would YOU do if you met this monster? Tell us in the comments!\n\n"
-        "Subscribe to AI Story World for more original mystery, monster and fantasy adventures.\n\n"
+        + "\n\nWho made you laugh more — Bop or Pip? Tell us in the comments!\n\n"
+        "Subscribe to AI Story World for more funny original cat and mouse cartoon adventures.\n\n"
         + hashtags
     )
 
@@ -69,7 +69,7 @@ def main():
             "snippet": {
                 "title": title,
                 "description": description,
-                "tags": ["AI Story World", "YouTube Shorts", "English Story", "Short Story", "StoryTime", "AI Story"] + [tag.lstrip("#") for tag in hashtags.split() if tag != "#Shorts"],
+                "tags": ["AI Story World", "YouTube Shorts", "Funny Cartoon", "Cat and Mouse", "Cartoon Comedy", "3D Animation"] + [tag.lstrip("#") for tag in hashtags.split() if tag != "#Shorts"],
                 "categoryId": "22",
             },
             "status": {
