@@ -84,7 +84,7 @@ def generate_cloudflare_image(prompt, destination, index):
         prompt,
         (
             "Family-friendly colorful 3D animated movie illustration, portrait 9:16. "
-            "A consistent family-friendly monster mystery scene with the same young explorer and recurring small purple-furred monster, "
+            "A consistent family-friendly cat-and-mouse cartoon comedy scene with the same plump orange cat and tiny teal-blue mouse, "
             + safe_scenes[index % len(safe_scenes)]
             + ". Warm positive mood, expressive friendly face, detailed storybook "
             "environment, polished high-quality cartoon rendering, soft cinematic "
