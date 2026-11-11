@@ -12,13 +12,10 @@ MAX_ATTEMPTS = 3
 
 def generate_story():
     prompt = """
-Write an original English Mystery + Monster Adventure story for YouTube Shorts.
+Write an original English cartoon comedy for YouTube Shorts featuring the same two original recurring characters in every episode: Bop, a plump orange cat with a cream muzzle, amber eyes and a tiny green collar; and Pip, a tiny clever teal-blue mouse with large ears and a red scarf. Keep their colors, proportions, faces and accessories identical in every scene.
 The narration MUST contain 120 to 140 words (aim for about 130 words, suitable for 50–65 seconds when narrated).
-Open with a powerful mystery or danger hook in the first sentence. No greeting, channel introduction, or slow setup.
-Include one original, memorable monster with a distinctive visual appearance and personality. Keep the monster's identity and appearance consistent throughout the story.
-Build suspense, clues, discovery, and a surprising but satisfying reveal. Keep it family-friendly: spooky and exciting, never graphic or gory.
-Structure the story into 5 clear visual moments, with 8–11 concise sentences. End with a strong payoff that makes viewers want to watch to the end.
-Use a fresh setting, monster design, and human character names each time. Avoid repeating familiar generic plots.
+Start immediately with a funny visual mishap or chase. No greeting or channel introduction. Build a clear setup, escalating harmless slapstick, clever mouse tricks, ridiculous cat reactions, silly props, exaggerated expressions and a surprising funny ending. Keep it cheerful and family-friendly, with no graphic injury or cruelty.
+Structure the episode into 5 clear visual moments with 8–11 concise sentences. Use a fresh setting and comic situation each time while preserving Bop and Pip's exact character designs. Make the action easy to understand visually.
 Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
