@@ -25,8 +25,9 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python app_short.py
-      - name: Generate vertical Short
+      - name: Generate vertical animated Short
         env:
+          VIGGLE_API_KEY: ${{ secrets.VIGGLE_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: python make_shorts.py
