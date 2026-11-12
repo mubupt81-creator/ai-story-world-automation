@@ -59,10 +59,12 @@ def check_viggle_credits():
     print(f"Viggle credit balance: {balance}")
     print(f"Required maximum for this 30-second 768p Short: {REQUIRED_CREDITS} credits.")
     if balance < REQUIRED_CREDITS:
-        raise RuntimeError(
-            f"Not enough Viggle credits ({balance} available; {REQUIRED_CREDITS} required). "
-            "Stopped before generating any paid video. No top-up or subscription is requested."
+        print(
+            f"SKIP: Only {balance} Viggle credits available; {REQUIRED_CREDITS} required. "
+            "No video was generated and no top-up or subscription was requested."
         )
+        return False
+    return True
 
 
 def scene_prompt(title, excerpt, index):
@@ -233,7 +235,8 @@ def assemble_short(clip_paths):
 
 def make_video(title, story):
     # Check balance before any billable Viggle video-generation request.
-    check_viggle_credits()
+    if not check_viggle_credits():
+        return False
     scenes = split_story(story, count=CLIP_COUNT)
     if len(scenes) != CLIP_COUNT:
         raise RuntimeError(
@@ -250,6 +253,7 @@ def make_video(title, story):
         clip_paths.append(clip_path)
 
     assemble_short(clip_paths)
+    return True
 
 
 if __name__ == "__main__":
