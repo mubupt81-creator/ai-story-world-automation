@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import os
 import json
@@ -10,9 +9,7 @@ from pathlib import Path
 
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import edge_tts
 
-VOICE = "en-US-AriaNeural"
 WIDTH, HEIGHT, FPS = 1080, 1920, 24
 SCENE_COUNT = 5
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
@@ -166,31 +163,9 @@ def make_fallback_image(title, excerpt, index, path):
     image.save(path, quality=92)
 
 
-async def make_voice(story):
-    audio = OUT / "narration.mp3"
-    communicate = edge_tts.Communicate(
-        text=story, voice=VOICE, rate="-8%", volume="+0%"
-    )
-    await communicate.save(str(audio))
-    if not audio.exists() or audio.stat().st_size < 1000:
-        raise RuntimeError("Neural text-to-speech did not create a valid audio file.")
-    print(f"SUCCESS: Natural English neural voice-over created with {VOICE}.")
-
-
-def audio_duration(path):
-    result = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
-        check=True, capture_output=True, text=True
-    )
-    return float(result.stdout.strip())
-
-
 def make_video(title, story):
-    audio = OUT / "narration.mp3"
-    duration = audio_duration(audio)
-    scenes = split_story(story)
-    seconds_per_scene = duration / len(scenes)
+    scenes = split_story(story, count=SCENE_COUNT)
+    seconds_per_scene = 6.0
     image_paths = []
 
     for i, excerpt in enumerate(scenes):
@@ -215,12 +190,12 @@ def make_video(title, story):
             source.save(image_path, quality=94)
         image_paths.append(image_path)
 
-    # Five story-matched stills receive slow cinematic Ken Burns movement and soft fades.
+    # Five story-matched silent visual scenes receive camera movement and soft fades.
     inputs = []
     filters = []
     labels = []
     for i, image_path in enumerate(image_paths):
-        scene_duration = seconds_per_scene + (0.15 if i == len(image_paths) - 1 else 0)
+        scene_duration = seconds_per_scene
         frames = max(1, int(scene_duration * FPS))
         inputs += ["-i", str(image_path)]
         zoom = "min(zoom+0.00065,1.10)" if i % 2 == 0 else "max(zoom-0.00045,1.0)"
@@ -241,19 +216,17 @@ def make_video(title, story):
     filter_complex = ";".join(filters)
     video_path = OUT / "ai_story_short.mp4"
     subprocess.run(
-        ["ffmpeg", "-y", *inputs, "-i", str(audio),
+        ["ffmpeg", "-y", *inputs,
          "-filter_complex", filter_complex,
-         "-map", "[vout]", "-map", f"{len(image_paths)}:a",
+         "-map", "[vout]", "-t", "30",
          "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast",
-         "-crf", "22", "-c:a", "aac", "-b:a", "160k",
-         "-shortest", "-movflags", "+faststart", str(video_path)],
+         "-crf", "22", "-an", "-movflags", "+faststart", str(video_path)],
         check=True
     )
-    print(f"SUCCESS: Vertical 1080x1920 Short created: {video_path} ({duration:.1f}s)")
-    print(f"Voice: {VOICE}; scenes: {len(image_paths)}; camera motion: vertical Ken Burns zoom.")
+    print(f"SUCCESS: Silent vertical 1080x1920 Short created: {video_path} (30 seconds)")
+    print(f"No voice or dialogue; scenes: {len(image_paths)}; camera motion: vertical Ken Burns zoom.")
 
 
 if __name__ == "__main__":
     title, story = load_story()
-    asyncio.run(make_voice(story))
     make_video(title, story)
