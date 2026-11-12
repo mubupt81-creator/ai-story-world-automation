@@ -39,7 +39,7 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python upload_shorts.py
       - name: Save Short artifact
-        if: hashFiles('output/ai_story_short.mp4') != ''
+        if: always() && hashFiles('output/ai_story_short.mp4') != ''
         uses: actions/upload-artifact@v4
         with:
           name: ai-story-world-short
