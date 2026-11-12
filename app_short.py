@@ -7,7 +7,7 @@ import urllib.error
 API_KEY = os.environ["GEMINI_API_KEY"]
 MODEL = "gemini-3.5-flash-lite"
 TIMEOUT_SECONDS = 180
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = 5
 
 
 def generate_story():
@@ -64,7 +64,7 @@ Do not include Markdown fences or any text outside the JSON.
             if attempt == MAX_ATTEMPTS:
                 raise
 
-        wait_seconds = 10 * attempt
+        wait_seconds = min(15 * (2 ** (attempt - 1)), 90)
         print(f"Retrying in {wait_seconds} seconds...")
         time.sleep(wait_seconds)
 
