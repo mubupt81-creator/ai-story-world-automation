@@ -37,10 +37,9 @@ def main():
     hashtags = make_hashtags(title, story)
     description = (
         f"{title.replace(' #Shorts', '')} | Funny Cat & Mouse Cartoon\n\n"
-        "Bop the playful orange cat and Pip the clever little mouse are back with a brand-new funny chase! "
-        "Expect silly tricks, hilarious reactions and a surprise ending.\n\n"
-        + story[:3500]
-        + "\n\nWho made you laugh more — Bop or Pip? Tell us in the comments!\n\n"
+        "A 30-second silent cartoon comedy starring Bop the playful orange cat and Pip the clever little mouse! "
+        "No talking and no narration — just funny visual action, clever tricks, expressive reactions and a surprise ending.\n\n"
+        "Who made you laugh more — Bop or Pip? Tell us in the comments!\n\n"
         "Subscribe to AI Story World for more funny original cat and mouse cartoon adventures.\n\n"
         + hashtags
     )
