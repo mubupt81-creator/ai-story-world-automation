@@ -36,8 +36,8 @@ def split_story(story, count=CLIP_COUNT):
     if isinstance(story, list):
         beats = [str(beat).strip() for beat in story if str(beat).strip()]
     elif isinstance(story, str):
-        beats = re.split(r"(?<=[.!?])\\s+", story.strip())
-        beats = [beat.strip(" \\t\\r\\n-0123456789.)") for beat in beats if beat.strip()]
+        beats = re.split(r"(?<=[.!?])\s+", story.strip())
+        beats = [beat.strip(" \t\r\n-0123456789.)") for beat in beats if beat.strip()]
     else:
         raise ValueError(f"Story must be text or a list of beats, got {type(story).__name__}.")
     beats = [beat for beat in beats if beat]
