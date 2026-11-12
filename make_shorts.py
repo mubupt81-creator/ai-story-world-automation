@@ -32,8 +32,14 @@ def load_story():
 
 
 def split_story(story, count=CLIP_COUNT):
-    beats = re.split(r"(?<=[.!?])\s+", story.strip())
-    beats = [beat.strip(" \t\r\n-0123456789.)") for beat in beats if beat.strip()]
+    # Gemini returns the five visual beats as a JSON list; also accept plain text.
+    if isinstance(story, list):
+        beats = [str(beat).strip() for beat in story if str(beat).strip()]
+    elif isinstance(story, str):
+        beats = re.split(r"(?<=[.!?])\\s+", story.strip())
+        beats = [beat.strip(" \\t\\r\\n-0123456789.)") for beat in beats if beat.strip()]
+    else:
+        raise ValueError(f"Story must be text or a list of beats, got {type(story).__name__}.")
     beats = [beat for beat in beats if beat]
     if not beats:
         raise ValueError("Story contains no visual action beats.")
@@ -41,7 +47,6 @@ def split_story(story, count=CLIP_COUNT):
     for i, beat in enumerate(beats):
         groups[min(len(groups) - 1, i * len(groups) // len(beats))].append(beat)
     return [" ".join(group) for group in groups]
-
 
 def viggle_headers():
     key = os.getenv("VIGGLE_API_KEY", "").strip()
