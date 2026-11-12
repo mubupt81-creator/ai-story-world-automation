@@ -13,13 +13,13 @@ MAX_ATTEMPTS = 3
 def generate_story():
     prompt = """
 Write an original English cartoon comedy for YouTube Shorts featuring the same two original recurring characters in every episode: Bop, a plump orange cat with a cream muzzle, amber eyes and a tiny green collar; and Pip, a tiny clever teal-blue mouse with large ears and a red scarf. Keep their colors, proportions, faces and accessories identical in every scene.
-The narration MUST contain 120 to 140 words (aim for about 130 words, suitable for 50–65 seconds when narrated).
-Start immediately with a funny visual mishap or chase. No greeting or channel introduction. Build a clear setup, escalating harmless slapstick, clever mouse tricks, ridiculous cat reactions, silly props, exaggerated expressions and a surprising funny ending. Keep it cheerful and family-friendly, with no graphic injury or cruelty.
-Structure the episode into 5 clear visual moments with 8–11 concise sentences. Use a fresh setting and comic situation each time while preserving Bop and Pip's exact character designs. Make the action easy to understand visually.
+Create a completely silent, dialogue-free visual cartoon for a 30-second YouTube Short. Do NOT write narration, dialogue, subtitles, captions or on-screen text.
+Return exactly 5 numbered visual action beats, one for each 6-second scene. Each beat should describe visible movement, facial expressions, timing and a clear physical gag. Start instantly with a funny mishap or chase; build escalating harmless slapstick, clever mouse tricks, ridiculous cat reactions and a surprising visual punchline. Keep it cheerful and family-friendly, with no graphic injury or cruelty.
+Use a fresh setting and comic situation each time while preserving Bop and Pip's exact character designs. The story must be understandable with the sound completely off.
 Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
-"story": the complete narration
+"story": the five visual action beats (not narration)
 Do not include Markdown fences or any text outside the JSON.
 """
 
