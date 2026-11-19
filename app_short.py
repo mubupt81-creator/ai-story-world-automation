@@ -12,10 +12,10 @@ MAX_ATTEMPTS = 5
 
 def generate_story():
     prompt = """
-Write an original English cartoon comedy for YouTube Shorts featuring the same two original recurring characters in every episode: Bop, a plump orange cat with a cream muzzle, amber eyes and a tiny green collar; and Pip, a tiny clever teal-blue mouse with large ears and a red scarf. Keep their colors, proportions, faces and accessories identical in every scene.
-Create a completely silent, dialogue-free visual cartoon for a 30-second YouTube Short. Do NOT write narration, dialogue, subtitles, captions or on-screen text.
-Return exactly 5 numbered visual action beats, one for each 6-second scene. Each beat should describe visible movement, facial expressions, timing and a clear physical gag. Start instantly with a funny mishap or chase; build escalating harmless slapstick, clever mouse tricks, ridiculous cat reactions and a surprising visual punchline. Keep it cheerful and family-friendly, with no graphic injury or cruelty.
-Use a fresh setting and comic situation each time while preserving Bop and Pip's exact character designs. The story must be understandable with the sound completely off.
+Write an original English 2D stickman fight adventure for YouTube Shorts.
+Main recurring characters: Hero Stickman, a simple white round head with a bold black line body and a small red wristband; Shadow Stickman, a black stick figure with glowing red eyes. Keep their exact simple 2D line-art designs consistent in every scene.
+Create a silent, dialogue-free visual cartoon for a 30-second YouTube Short. No narration, dialogue, subtitles, captions or on-screen text.
+Return exactly 5 numbered visual action beats, one for each 6-second scene. Show a fast, exciting but playful stickman martial-arts battle: dodges, punches, kicks, jumps, blocks, flips and clever counterattacks. Use clear readable poses, dynamic 2D animation, speed lines and simple backgrounds. Start with an instant action hook, escalate the fight, and end with a surprising funny twist. No blood, gore, weapons, realistic injury or cruelty.
 Include a catchy, specific title.
 Return a JSON object with exactly these keys:
 "title": a short video title
