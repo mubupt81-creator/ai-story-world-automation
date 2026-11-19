@@ -73,20 +73,15 @@ def check_viggle_credits():
 
 
 def scene_prompt(title, excerpt, index):
-    safe_scenes = [
-        "Bop the orange cat spots Pip the tiny blue mouse sneaking away with a giant cheese wheel in a sunny kitchen",
-        "Pip tricks Bop into stepping onto a tiny toy skateboard, and Bop makes a harmless surprised wobble",
-        "Bop and Pip tumble into a soft pile of pillows, then share a funny victorious high-five",
-    ]
     return (
-        "Portrait 9:16 polished 3D family cartoon animation keyframe, bright cinematic lighting, "
-        "high-end feature-animation look, clean colorful environment. Show the same two original characters: "
-        "Bop, a plump orange cat with a cream muzzle, amber eyes and a tiny green collar; "
-        "Pip, a tiny teal-blue mouse with large round ears and a red scarf. "
-        "Keep both characters' designs, colors, proportions and accessories clear and consistent. "
-        "One readable opening pose for an animated comedy shot. "
-        "No words, letters, subtitles, logos, watermark, injury or violence. "
-        f"Episode: {title}. Opening image {index + 1}: {excerpt[:500] or safe_scenes[index]}."
+        "Portrait 9:16 crisp 2D stickman fight animation keyframe, clean white or simple colored background, "
+        "bold black hand-drawn outlines, flat colors, expressive poses, dynamic speed lines and comic-book action framing. "
+        "Show the same two original stickman characters: Hero Stickman, a white round head with a black line-art body "
+        "and a small red wristband; Shadow Stickman, a black stick figure with glowing red eyes. "
+        "Keep their simple 2D designs and proportions consistent. "
+        "Show a clear readable fight pose with no text, letters, subtitles, logos or watermark. "
+        "Non-graphic playful action only, no blood, gore or visible injury. "
+        f"Episode: {title}. Action beat {index + 1}: {excerpt[:500]}"
     )
 
 
@@ -127,17 +122,16 @@ def generate_cloudflare_image(prompt, destination, index):
 
 def make_animation_prompt(title, excerpt, index):
     return (
-        "Create a continuous, fluid, high-quality 3D animated family cartoon shot in portrait 9:16. "
-        "Animate the exact characters shown in the supplied first frame; preserve their appearance, "
-        "colors, proportions, faces and accessories throughout the shot. "
-        "Bop is a plump orange cat with a cream muzzle, amber eyes and a tiny green collar. "
-        "Pip is a tiny teal-blue mouse with large ears and a red scarf. "
-        "Use expressive body acting, clear movement, squash-and-stretch, lively timing, "
-        "smooth character motion and physical comedy. The action must visibly progress for the full shot; "
-        "do not make a still image or slideshow and do not use camera zoom as a substitute for character motion. "
-        "Silent visual comedy only: no speech, narration, singing, music, sound effects, captions, "
-        "subtitles, logos or on-screen text. Family friendly, harmless slapstick, no injury or cruelty. "
-        f"Episode: {title}. Shot {index + 1} action: {excerpt}"
+        "Create a fluid 2D stickman fight animation in portrait 9:16, matching the supplied first frame exactly. "
+        "Preserve the same two characters and clean hand-drawn black outlines throughout: "
+        "Hero Stickman has a white round head, black line-art body and small red wristband; "
+        "Shadow Stickman is a black stick figure with glowing red eyes. "
+        "Use clear frame-by-frame 2D movement, squash-and-stretch, anticipation, follow-through, "
+        "fast dodges, punches, kicks, blocks, jumps, flips, speed lines and dynamic camera framing. "
+        "The characters must move continuously for the full shot; do not create a still image or slideshow. "
+        "Silent visual action only: no speech, narration, singing, music, sound effects, captions, subtitles, "
+        "logos or on-screen text. Playful non-graphic fight only, no blood, gore or injury. "
+        f"Episode: {title}. Fight action beat {index + 1}: {excerpt}"
     )
 
 
