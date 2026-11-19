@@ -1,24 +1,12 @@
-import base64
 import json
-import os
-import re
+import math
 import subprocess
-import time
 from pathlib import Path
 
-import requests
-from PIL import Image
+from PIL import Image, ImageDraw
 
-WIDTH, HEIGHT, FPS = 1080, 1920, 24
-CLIP_COUNT = 3
-CLIP_SECONDS = 10
-VIGGLE_BASE = "https://apis.viggle.ai/v1"
-VIGGLE_RESOLUTION = "768p"
-# At 768p with enhance=false, H3 costs 1 credit per generated second.
-REQUIRED_CREDITS = CLIP_COUNT * CLIP_SECONDS
-CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
-CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
-CLOUDFLARE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b"
+WIDTH, HEIGHT, FPS, DURATION = 540, 960, 20, 30
+FRAME_COUNT = FPS * DURATION
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 
@@ -28,231 +16,157 @@ def load_story():
     title, story = data.get("title"), data.get("story")
     if not title or not story:
         raise ValueError("story.txt must contain title and story")
-    return title, story
+    return str(title), story
 
 
-def split_story(story, count=CLIP_COUNT):
-    # Gemini returns the five visual beats as a JSON list; also accept plain text.
-    if isinstance(story, list):
-        beats = [str(beat).strip() for beat in story if str(beat).strip()]
-    elif isinstance(story, str):
-        beats = re.split(r"(?<=[.!?])\s+", story.strip())
-        beats = [beat.strip(" \t\r\n-0123456789.)") for beat in beats if beat.strip()]
-    else:
-        raise ValueError(f"Story must be text or a list of beats, got {type(story).__name__}.")
-    beats = [beat for beat in beats if beat]
-    if not beats:
-        raise ValueError("Story contains no visual action beats.")
-    groups = [[] for _ in range(min(count, len(beats)))]
-    for i, beat in enumerate(beats):
-        groups[min(len(groups) - 1, i * len(groups) // len(beats))].append(beat)
-    return [" ".join(group) for group in groups]
-
-def viggle_headers():
-    key = os.getenv("VIGGLE_API_KEY", "").strip()
-    if not key:
-        raise RuntimeError("Missing VIGGLE_API_KEY GitHub Actions secret.")
-    return {"Authorization": f"Bearer {key}"}
+def smoothstep(value):
+    value = max(0.0, min(1.0, value))
+    return value * value * (3 - 2 * value)
 
 
-def check_viggle_credits():
-    response = requests.get(f"{VIGGLE_BASE}/credits", headers=viggle_headers(), timeout=30)
-    response.raise_for_status()
-    balance = response.json().get("balance")
-    if not isinstance(balance, (int, float)):
-        raise RuntimeError("Viggle returned an unreadable credit balance; stopping safely.")
-    print(f"Viggle credit balance: {balance}")
-    print(f"Required maximum for this 30-second 768p Short: {REQUIRED_CREDITS} credits.")
-    if balance < REQUIRED_CREDITS:
-        print(
-            f"SKIP: Only {balance} Viggle credits available; {REQUIRED_CREDITS} required. "
-            "No video was generated and no top-up or subscription was requested."
-        )
-        return False
-    return True
+def draw_stickman(draw, x, y, scale, color, phase, fighter, facing=1):
+    # A deliberately simple, consistent 2D stick-figure design.
+    head_r = int(25 * scale)
+    line_w = max(5, int(9 * scale))
+    t = phase
+    bob = math.sin(t * 8 + fighter) * 7 * scale
+    cx, cy = int(x), int(y + bob)
+    head_y = cy - int(112 * scale)
+    draw.ellipse((cx-head_r, head_y-head_r, cx+head_r, head_y+head_r),
+                 fill="#ffffff" if fighter == 0 else "#171923",
+                 outline=color, width=max(4, int(6*scale)))
+    if fighter == 1:
+        eye_y = head_y - 1
+        draw.ellipse((cx-11*scale, eye_y-3*scale, cx-4*scale, eye_y+4*scale), fill="#ff3b4f")
+        draw.ellipse((cx+4*scale, eye_y-3*scale, cx+11*scale, eye_y+4*scale), fill="#ff3b4f")
+
+    shoulder = (cx, cy-int(80*scale))
+    hip = (cx-int(2*scale), cy+int(28*scale))
+    # Six readable action poses, cycling through a short choreographed fight.
+    action = int((t % (2*math.pi)) / (2*math.pi) * 6)
+    arm_a = [
+        (-42,-48, 42,-48), (-60,-70, 65,-12), (-55,-12, 75,-68),
+        (-65,-65, 72,-70), (-48,-8, 75,-78), (-62,-65, 62,-65)
+    ][action]
+    leg_a = [
+        (-42,65, 42,65), (-60,65, 60,25), (-75,15, 85,75),
+        (-65,65, 70,15), (-65,70, 90,-15), (-45,65, 45,65)
+    ][action]
+    punch = math.sin(t*2.5 + fighter*math.pi)
+    arm_a = (arm_a[0], arm_a[1], arm_a[2] + punch*18, arm_a[3])
+    def pt(dx, dy):
+        return (int(cx + dx*scale*facing), int(cy + dy*scale))
+    draw.line((shoulder, pt(*arm_a[:2])), fill=color, width=line_w)
+    draw.line((shoulder, pt(*arm_a[2:])), fill=color, width=line_w)
+    draw.line((hip, pt(*leg_a[:2])), fill=color, width=line_w)
+    draw.line((hip, pt(*leg_a[2:])), fill=color, width=line_w)
+    draw.line((shoulder, hip), fill=color, width=line_w)
+    # Red wristband identifies the hero.
+    if fighter == 0:
+        wx, wy = pt(*arm_a[2:])
+        draw.ellipse((wx-7*scale, wy-7*scale, wx+7*scale, wy+7*scale), fill="#ff4757")
 
 
-def scene_prompt(title, excerpt, index):
-    return (
-        "Portrait 9:16 crisp 2D stickman fight animation keyframe, clean white or simple colored background, "
-        "bold black hand-drawn outlines, flat colors, expressive poses, dynamic speed lines and comic-book action framing. "
-        "Show the same two original stickman characters: Hero Stickman, a white round head with a black line-art body "
-        "and a small red wristband; Shadow Stickman, a black stick figure with glowing red eyes. "
-        "Keep their simple 2D designs and proportions consistent. "
-        "Show a clear readable fight pose with no text, letters, subtitles, logos or watermark. "
-        "Non-graphic playful action only, no blood, gore or visible injury. "
-        f"Episode: {title}. Action beat {index + 1}: {excerpt[:500]}"
-    )
+def make_frame(frame_index):
+    t = frame_index / FPS
+    phase = (t % 30) / 30
+    image = Image.new("RGB", (WIDTH, HEIGHT), "#f5f7ff")
+    draw = ImageDraw.Draw(image)
 
+    # Simple changing 2D comic backgrounds; no external image service required.
+    for y in range(0, HEIGHT, 4):
+        mix = y / HEIGHT
+        c1, c2 = (246, 249, 255), (220, 231, 255)
+        color = tuple(int(c1[i]*(1-mix)+c2[i]*mix) for i in range(3))
+        draw.rectangle((0, y, WIDTH, y+4), fill=color)
+    draw.ellipse((30, 100, 180, 250), fill="#ffffff", outline="#e3eaff", width=3)
+    draw.ellipse((390, 170, 510, 290), fill="#ffffff", outline="#e3eaff", width=3)
+    floor_y = 800
+    draw.line((0, floor_y, WIDTH, floor_y), fill="#64748b", width=5)
+    for x in range(20, WIDTH, 65):
+        draw.line((x, floor_y+8, x+25, floor_y+8), fill="#aab6ca", width=3)
 
-def generate_cloudflare_image(prompt, destination, index):
-    if not CLOUDFLARE_ACCOUNT_ID or not CLOUDFLARE_API_TOKEN:
-        raise RuntimeError("Cloudflare image-generation secrets are missing.")
-    endpoint = (
-        f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}"
-        f"/ai/run/{CLOUDFLARE_MODEL}"
-    )
-    headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"}
-    form = {
-        "prompt": prompt,
-        "width": "768",
-        "height": "1344",
-        "guidance": "4",
-    }
-    response = requests.post(
-        endpoint,
-        headers=headers,
-        files={key: (None, value) for key, value in form.items()},
-        timeout=(30, 240),
-    )
-    if not response.ok:
-        raise RuntimeError(
-            f"Cloudflare image API failed for opening frame {index + 1}: "
-            f"HTTP {response.status_code}: {response.text[:400]}"
-        )
-    payload = response.json()
-    image_b64 = (payload.get("result") or {}).get("image")
-    if not image_b64:
-        raise RuntimeError(f"Cloudflare returned no opening image for clip {index + 1}.")
-    destination.write_bytes(base64.b64decode(image_b64, validate=True))
-    with Image.open(destination) as image_file:
-        image_file.verify()
-    print(f"Created opening frame {index + 1}.")
+    # Five 6-second beats: stare-down, dodge, kick, spin, comic finish.
+    segment = min(4, int(t // 6))
+    local = (t - segment*6) / 6
+    beat = [0.0, 1.0, 2.0, 3.0, 4.0][segment]
+    wobble = math.sin(local*math.pi*2)
+    hero_x = 160 + (segment*13) + math.sin(local*math.pi*2)*22
+    rival_x = 380 - (segment*11) - math.sin(local*math.pi*2)*22
+    if segment == 1:
+        hero_x += 55*smoothstep(local)
+        rival_x -= 30*smoothstep(local)
+    elif segment == 2:
+        hero_x += 70*math.sin(local*math.pi)
+        rival_x -= 55*math.sin(local*math.pi)
+    elif segment == 3:
+        hero_x += 35*math.sin(local*math.pi*3)
+        rival_x -= 35*math.sin(local*math.pi*3)
+    elif segment == 4:
+        hero_x = 210 + 12*math.sin(local*math.pi*2)
+        rival_x = 340 + 18*math.sin(local*math.pi*2)
 
+    # Comic impact rays appear briefly around the middle of each action beat.
+    if segment in (1, 2, 3) and 0.35 < local < 0.72:
+        ix = int((hero_x+rival_x)/2)
+        iy = 610
+        for angle in range(0, 360, 45):
+            rad = math.radians(angle)
+            draw.line((ix+math.cos(rad)*22, iy+math.sin(rad)*22,
+                       ix+math.cos(rad)*65, iy+math.sin(rad)*65),
+                      fill="#ffb703", width=5)
 
-def make_animation_prompt(title, excerpt, index):
-    return (
-        "Create a fluid 2D stickman fight animation in portrait 9:16, matching the supplied first frame exactly. "
-        "Preserve the same two characters and clean hand-drawn black outlines throughout: "
-        "Hero Stickman has a white round head, black line-art body and small red wristband; "
-        "Shadow Stickman is a black stick figure with glowing red eyes. "
-        "Use clear frame-by-frame 2D movement, squash-and-stretch, anticipation, follow-through, "
-        "fast dodges, punches, kicks, blocks, jumps, flips, speed lines and dynamic camera framing. "
-        "The characters must move continuously for the full shot; do not create a still image or slideshow. "
-        "Silent visual action only: no speech, narration, singing, music, sound effects, captions, subtitles, "
-        "logos or on-screen text. Playful non-graphic fight only, no blood, gore or injury. "
-        f"Episode: {title}. Fight action beat {index + 1}: {excerpt}"
-    )
+    hero_phase = t*2.2 + beat
+    rival_phase = t*2.0 + beat + math.pi
+    draw_stickman(draw, hero_x, 715, 1.35, "#202938", hero_phase, 0, 1)
+    draw_stickman(draw, rival_x, 715, 1.35, "#202938", rival_phase, 1, -1)
 
+    # A harmless comic twist: the shadow fighter slips and sits down at the end.
+    if segment == 4 and local > 0.58:
+        sx = int(rival_x)
+        draw.ellipse((sx-35, 770, sx+35, 790), fill="#aab6ca")
+        draw.arc((sx-26, 665, sx+26, 715), 0, 180, fill="#202938", width=6)
+        for k in range(3):
+            draw.line((sx+35+k*9, 650-k*10, sx+48+k*9, 638-k*10), fill="#ff4757", width=4)
 
-def generate_viggle_clip(prompt, first_frame, destination, index):
-    headers = viggle_headers()
-    with first_frame.open("rb") as image_file:
-        response = requests.post(
-            f"{VIGGLE_BASE}/videos",
-            headers=headers,
-            data={
-                "prompt": prompt,
-                "quality": "low",
-                "duration_s": str(CLIP_SECONDS),
-                "resolution": VIGGLE_RESOLUTION,
-                "aspect_ratio": "9:16",
-                "enhance": "false",
-                "watermark": "false",
-            },
-            files={"first_frame_image": (first_frame.name, image_file, "image/jpeg")},
-            timeout=(30, 180),
-        )
-    if not response.ok:
-        raise RuntimeError(
-            f"Viggle rejected clip {index + 1}: HTTP {response.status_code}: "
-            f"{response.text[:600]}"
-        )
-    job = response.json()
-    video_id = job.get("id")
-    if not video_id:
-        raise RuntimeError(f"Viggle returned no video ID for clip {index + 1}: {job}")
-
-    print(f"Viggle accepted clip {index + 1}; waiting for animation...")
-    video = None
-    for attempt in range(120):
-        time.sleep(5)
-        poll = requests.get(
-            f"{VIGGLE_BASE}/videos/{video_id}",
-            headers=headers,
-            timeout=30,
-        )
-        poll.raise_for_status()
-        video = poll.json()
-        status = video.get("status")
-        if status in ("ready", "failed", "cancelled"):
-            break
-        if attempt % 6 == 0:
-            print(f"Clip {index + 1} status: {status or 'processing'}")
-    else:
-        raise TimeoutError(f"Timed out waiting for Viggle clip {index + 1} ({video_id}).")
-
-    if video.get("status") != "ready" or not video.get("video_url"):
-        raise RuntimeError(
-            f"Viggle clip {index + 1} did not complete: "
-            f"{json.dumps(video.get('error') or video, ensure_ascii=False)[:700]}"
-        )
-
-    download = requests.get(video["video_url"], timeout=(30, 240), stream=True)
-    download.raise_for_status()
-    with destination.open("wb") as output_file:
-        for chunk in download.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                output_file.write(chunk)
-    if destination.stat().st_size < 10_000:
-        raise RuntimeError(f"Viggle clip {index + 1} download is unexpectedly small.")
-    print(f"Downloaded animated clip {index + 1}.")
-
-
-def assemble_short(clip_paths):
-    video_path = OUT / "ai_story_short.mp4"
-    inputs = []
-    filters = []
-    labels = []
-    for index, clip_path in enumerate(clip_paths):
-        inputs += ["-i", str(clip_path)]
-        label = f"v{index}"
-        filters.append(
-            f"[{index}:v]scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease,"
-            f"pad={WIDTH}:{HEIGHT}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={FPS},"
-            f"format=yuv420p[{label}]"
-        )
-        labels.append(f"[{label}]")
-    filters.append(
-        f"{''.join(labels)}concat=n={len(clip_paths)}:v=1:a=0,format=yuv420p[vout]"
-    )
-    subprocess.run(
-        [
-            "ffmpeg", "-y", *inputs,
-            "-filter_complex", ";".join(filters),
-            "-map", "[vout]", "-t", "30",
-            "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast",
-            "-crf", "22", "-an", "-movflags", "+faststart", str(video_path),
-        ],
-        check=True,
-    )
-    if not video_path.exists() or video_path.stat().st_size < 100_000:
-        raise RuntimeError("Final animated Short was not created correctly.")
-    print(f"SUCCESS: 30-second silent 3D-style animated Short: {video_path}")
-    print("Three 10-second Viggle H3 animated clips; source audio removed.")
+    # Small progress marker; no words or captions.
+    draw.rounded_rectangle((35, 45, WIDTH-35, 56), radius=6, fill="#d5deef")
+    draw.rounded_rectangle((35, 45, 35+(WIDTH-70)*(frame_index/FRAME_COUNT), 56),
+                           radius=6, fill="#ff4757")
+    return image
 
 
 def make_video(title, story):
-    # Check balance before any billable Viggle video-generation request.
-    if not check_viggle_credits():
-        return False
-    scenes = split_story(story, count=CLIP_COUNT)
-    if len(scenes) != CLIP_COUNT:
-        raise RuntimeError(
-            f"Expected {CLIP_COUNT} story sections for a 30-second Short; got {len(scenes)}."
-        )
+    video_path = OUT / "ai_story_short.mp4"
+    command = [
+        "ffmpeg", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+        "-s", f"{WIDTH}x{HEIGHT}", "-r", str(FPS), "-i", "-",
+        "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+        "-pix_fmt", "yuv420p", "-t", str(DURATION), "-movflags", "+faststart",
+        str(video_path)
+    ]
+    process = subprocess.Popen(command, stdin=subprocess.PIPE)
+    try:
+        for frame_index in range(FRAME_COUNT):
+            frame = make_frame(frame_index)
+            process.stdin.write(frame.tobytes())
+            if frame_index % (FPS*5) == 0:
+                print(f"Rendering 2D stickman fight: {frame_index}/{FRAME_COUNT} frames")
+        process.stdin.close()
+        result = process.wait()
+        if result != 0:
+            raise RuntimeError(f"FFmpeg exited with code {result}")
+    except Exception:
+        if process.stdin and not process.stdin.closed:
+            process.stdin.close()
+        process.kill()
+        process.wait()
+        raise
 
-    clip_paths = []
-    for index, excerpt in enumerate(scenes):
-        frame_path = OUT / f"opening_frame_{index + 1:02d}.jpg"
-        clip_path = OUT / f"viggle_clip_{index + 1:02d}.mp4"
-        generate_cloudflare_image(scene_prompt(title, excerpt, index), frame_path, index)
-        prompt = make_animation_prompt(title, excerpt, index)
-        generate_viggle_clip(prompt, frame_path, clip_path, index)
-        clip_paths.append(clip_path)
-
-    assemble_short(clip_paths)
-    return True
+    if not video_path.exists() or video_path.stat().st_size < 10_000:
+        raise RuntimeError("Final 2D stickman Short was not created correctly.")
+    print(f"SUCCESS: Created {DURATION}-second 2D Stick Man Fight Short: {video_path}")
+    print("No Viggle, Cloudflare, paid video credits, voice, or external image API used.")
 
 
 if __name__ == "__main__":
