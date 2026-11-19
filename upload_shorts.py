@@ -21,7 +21,7 @@ def make_hashtags(title, story):
             chosen.append(word)
         if len(chosen) == 4:
             break
-    tags = ["#Shorts", "#FunnyCartoon", "#CatAndMouse", "#CartoonComedy"]
+    tags = ["#Shorts", "#StickmanFight", "#2DAnimation", "#Stickman"]
     tags.extend("#" + word.title().replace(" ", "") for word in chosen)
     return " ".join(tags[:8])
 
@@ -36,11 +36,11 @@ def main():
     story = str(data.get("story", ""))
     hashtags = make_hashtags(title, story)
     description = (
-        f"{title.replace(' #Shorts', '')} | Funny Cat & Mouse Cartoon\n\n"
-        "A 30-second silent cartoon comedy starring Bop the playful orange cat and Pip the clever little mouse! "
-        "No talking and no narration — just funny visual action, clever tricks, expressive reactions and a surprise ending.\n\n"
-        "Who made you laugh more — Bop or Pip? Tell us in the comments!\n\n"
-        "Subscribe to AI Story World for more funny original cat and mouse cartoon adventures.\n\n"
+        f"{title.replace(' #Shorts', '')} | 2D Stick Man Fight Animation\n\n"
+        "A 30-second 2D stickman fight animation with fast dodges, punches, kicks, flips and a funny surprise ending. "
+        "No voice or narration — just visual action.\n\n"
+        "Who won the fight? Tell us in the comments!\n\n"
+        "Subscribe to AI Story World for more original stickman fight adventures.\n\n"
         + hashtags
     )
 
@@ -68,7 +68,7 @@ def main():
             "snippet": {
                 "title": title,
                 "description": description,
-                "tags": ["AI Story World", "YouTube Shorts", "Funny Cartoon", "Cat and Mouse", "Cartoon Comedy", "3D Animation"] + [tag.lstrip("#") for tag in hashtags.split() if tag != "#Shorts"],
+                "tags": ["AI Story World", "YouTube Shorts", "Stickman Fight", "2D Animation", "Stick Figure", "Action Cartoon"] + [tag.lstrip("#") for tag in hashtags.split() if tag != "#Shorts"],
                 "categoryId": "22",
             },
             "status": {
