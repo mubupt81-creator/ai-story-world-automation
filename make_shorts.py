@@ -24,115 +24,129 @@ def smoothstep(value):
     return value * value * (3 - 2 * value)
 
 
-def draw_stickman(draw, x, y, scale, color, phase, fighter, facing=1):
-    # A deliberately simple, consistent 2D stick-figure design.
-    head_r = int(25 * scale)
-    line_w = max(5, int(9 * scale))
-    t = phase
-    bob = math.sin(t * 8 + fighter) * 7 * scale
-    cx, cy = int(x), int(y + bob)
-    head_y = cy - int(112 * scale)
-    draw.ellipse((cx-head_r, head_y-head_r, cx+head_r, head_y+head_r),
-                 fill="#ffffff" if fighter == 0 else "#171923",
-                 outline=color, width=max(4, int(6*scale)))
-    if fighter == 1:
-        eye_y = head_y - 1
-        draw.ellipse((cx-11*scale, eye_y-3*scale, cx-4*scale, eye_y+4*scale), fill="#ff3b4f")
-        draw.ellipse((cx+4*scale, eye_y-3*scale, cx+11*scale, eye_y+4*scale), fill="#ff3b4f")
+def draw_stickman(draw, x, y, scale, color, phase, fighter, facing=1, pose="stand"):
+    # Minimal hand-drawn stick figure: solid colour, thick rounded strokes.
+    cx, cy = int(x), int(y)
+    bob = math.sin(phase * 5 + fighter) * 8 * scale
+    cx, cy = int(cx), int(cy + bob)
+    head_r = int(27 * scale)
+    width = max(13, int(23 * scale))
 
-    shoulder = (cx, cy-int(80*scale))
-    hip = (cx-int(2*scale), cy+int(28*scale))
-    # Six readable action poses, cycling through a short choreographed fight.
-    action = int((t % (2*math.pi)) / (2*math.pi) * 6)
-    arm_a = [
-        (-42,-48, 42,-48), (-60,-70, 65,-12), (-55,-12, 75,-68),
-        (-65,-65, 72,-70), (-48,-8, 75,-78), (-62,-65, 62,-65)
-    ][action]
-    leg_a = [
-        (-42,65, 42,65), (-60,65, 60,25), (-75,15, 85,75),
-        (-65,65, 70,15), (-65,70, 90,-15), (-45,65, 45,65)
-    ][action]
-    punch = math.sin(t*2.5 + fighter*math.pi)
-    arm_a = (arm_a[0], arm_a[1], arm_a[2] + punch*18, arm_a[3])
-    def pt(dx, dy):
-        return (int(cx + dx*scale*facing), int(cy + dy*scale))
-    draw.line((shoulder, pt(*arm_a[:2])), fill=color, width=line_w)
-    draw.line((shoulder, pt(*arm_a[2:])), fill=color, width=line_w)
-    draw.line((hip, pt(*leg_a[:2])), fill=color, width=line_w)
-    draw.line((hip, pt(*leg_a[2:])), fill=color, width=line_w)
-    draw.line((shoulder, hip), fill=color, width=line_w)
-    # Red wristband identifies the hero.
-    if fighter == 0:
-        wx, wy = pt(*arm_a[2:])
-        draw.ellipse((wx-7*scale, wy-7*scale, wx+7*scale, wy+7*scale), fill="#ff4757")
+    # Character pose changes through the fight.
+    move = math.sin(phase * 2.8 + fighter * math.pi)
+    if pose == "fall":
+        head = (cx + int(48*scale*facing), cy - int(22*scale))
+        shoulder = (cx, cy)
+        hip = (cx - int(45*scale*facing), cy + int(8*scale))
+        arms = [(shoulder, (cx+int(20*scale*facing), cy-int(42*scale))),
+                (shoulder, (cx-int(5*scale*facing), cy+int(38*scale)))]
+        legs = [(hip, (cx-int(75*scale*facing), cy+int(32*scale))),
+                (hip, (cx-int(15*scale*facing), cy+int(70*scale)))]
+    elif pose == "kick":
+        head = (cx, cy-int(115*scale))
+        shoulder = (cx, cy-int(76*scale))
+        hip = (cx, cy+int(12*scale))
+        arms = [(shoulder, (cx-int(48*scale*facing), cy-int(40*scale))),
+                (shoulder, (cx+int(42*scale*facing), cy-int(55*scale)))]
+        legs = [(hip, (cx-int(35*scale*facing), cy+int(65*scale))),
+                (hip, (cx+int((100+35*move)*scale*facing), cy-int(8*scale)))]
+    elif pose == "punch":
+        head = (cx, cy-int(115*scale))
+        shoulder = (cx, cy-int(76*scale))
+        hip = (cx, cy+int(12*scale))
+        arms = [(shoulder, (cx-int(42*scale*facing), cy-int(28*scale))),
+                (shoulder, (cx+int((88+24*move)*scale*facing), cy-int(80*scale)))]
+        legs = [(hip, (cx-int(50*scale*facing), cy+int(68*scale))),
+                (hip, (cx+int(45*scale*facing), cy+int(60*scale)))]
+    elif pose == "jump":
+        head = (cx, cy-int(140*scale))
+        shoulder = (cx, cy-int(100*scale))
+        hip = (cx, cy-int(5*scale))
+        arms = [(shoulder, (cx-int(70*scale*facing), cy-int(150*scale))),
+                (shoulder, (cx+int(70*scale*facing), cy-int(150*scale)))]
+        legs = [(hip, (cx-int(70*scale*facing), cy+int(35*scale))),
+                (hip, (cx+int(70*scale*facing), cy+int(35*scale)))]
+    else:
+        head = (cx, cy-int(115*scale))
+        shoulder = (cx, cy-int(76*scale))
+        hip = (cx, cy+int(12*scale))
+        arms = [(shoulder, (cx-int(55*scale*facing), cy-int(28*scale))),
+                (shoulder, (cx+int(55*scale*facing), cy-int(28*scale)))]
+        legs = [(hip, (cx-int(48*scale*facing), cy+int(75*scale))),
+                (hip, (cx+int(48*scale*facing), cy+int(75*scale)))]
+
+    def thick_line(a, b):
+        draw.line((a, b), fill=color, width=width)
+        r = width // 2
+        for px, py in (a, b):
+            draw.ellipse((px-r, py-r, px+r, py+r), fill=color)
+
+    # Single solid colour throughout each figure, like the supplied reference.
+    draw.ellipse((head[0]-head_r, head[1]-head_r,
+                  head[0]+head_r, head[1]+head_r), fill=color)
+    thick_line(shoulder, hip)
+    for a, b in arms + legs:
+        thick_line(a, b)
 
 
 def make_frame(frame_index):
     t = frame_index / FPS
-    phase = (t % 30) / 30
-    image = Image.new("RGB", (WIDTH, HEIGHT), "#f5f7ff")
+    image = Image.new("RGB", (WIDTH, HEIGHT), "#ffffff")
     draw = ImageDraw.Draw(image)
 
-    # Simple changing 2D comic backgrounds; no external image service required.
-    for y in range(0, HEIGHT, 4):
-        mix = y / HEIGHT
-        c1, c2 = (246, 249, 255), (220, 231, 255)
-        color = tuple(int(c1[i]*(1-mix)+c2[i]*mix) for i in range(3))
-        draw.rectangle((0, y, WIDTH, y+4), fill=color)
-    draw.ellipse((30, 100, 180, 250), fill="#ffffff", outline="#e3eaff", width=3)
-    draw.ellipse((390, 170, 510, 290), fill="#ffffff", outline="#e3eaff", width=3)
-    floor_y = 800
-    draw.line((0, floor_y, WIDTH, floor_y), fill="#64748b", width=5)
-    for x in range(20, WIDTH, 65):
-        draw.line((x, floor_y+8, x+25, floor_y+8), fill="#aab6ca", width=3)
+    # Plain white stage and a strong black floor line, matching the reference.
+    floor_y = 755
+    draw.rectangle((0, floor_y, WIDTH, HEIGHT), fill="#ffffff")
+    draw.line((0, floor_y, WIDTH, floor_y), fill="#050505", width=5)
 
-    # Five 6-second beats: stare-down, dodge, kick, spin, comic finish.
-    segment = min(4, int(t // 6))
-    local = (t - segment*6) / 6
-    beat = [0.0, 1.0, 2.0, 3.0, 4.0][segment]
-    wobble = math.sin(local*math.pi*2)
-    hero_x = 160 + (segment*13) + math.sin(local*math.pi*2)*22
-    rival_x = 380 - (segment*11) - math.sin(local*math.pi*2)*22
+    segment = min(5, int(t // 5))
+    local = (t - segment * 5) / 5
+    pulse = math.sin(local * math.pi * 2)
+    hero_x = 150 + 18 * math.sin(t * 1.7)
+    rival_x = 390 - 18 * math.sin(t * 1.7)
+    hero_y = floor_y - 18
+    rival_y = floor_y - 18
+
+    # A clear six-beat fight: face-off, punch, dodge, kick, jump clash, knockdown.
+    hero_pose = "stand"
+    rival_pose = "stand"
     if segment == 1:
-        hero_x += 55*smoothstep(local)
-        rival_x -= 30*smoothstep(local)
+        hero_pose, rival_pose = "punch", "stand"
+        hero_x += 48 * smoothstep(local)
+        rival_x -= 18 * smoothstep(local)
     elif segment == 2:
-        hero_x += 70*math.sin(local*math.pi)
-        rival_x -= 55*math.sin(local*math.pi)
+        hero_pose, rival_pose = "stand", "fall"
+        hero_x += 30 * math.sin(local * math.pi)
+        rival_x -= 55 * smoothstep(local)
+        rival_y += 45 * smoothstep(local)
     elif segment == 3:
-        hero_x += 35*math.sin(local*math.pi*3)
-        rival_x -= 35*math.sin(local*math.pi*3)
+        hero_pose, rival_pose = "kick", "stand"
+        hero_x += 30 * smoothstep(local)
+        rival_x -= 25 * smoothstep(local)
     elif segment == 4:
-        hero_x = 210 + 12*math.sin(local*math.pi*2)
-        rival_x = 340 + 18*math.sin(local*math.pi*2)
+        hero_pose, rival_pose = "jump", "jump"
+        hero_y -= 80 * abs(pulse)
+        rival_y -= 65 * abs(pulse)
+        hero_x += 55 * math.sin(local * math.pi)
+        rival_x -= 55 * math.sin(local * math.pi)
+    elif segment == 5:
+        hero_pose, rival_pose = "stand", "fall"
+        rival_x -= 35
+        rival_y += 65 * smoothstep(local)
 
-    # Comic impact rays appear briefly around the middle of each action beat.
-    if segment in (1, 2, 3) and 0.35 < local < 0.72:
-        ix = int((hero_x+rival_x)/2)
-        iy = 610
+    # Brief hand-drawn impact burst at the point of contact.
+    if segment in (1, 3, 4) and 0.38 < local < 0.68:
+        ix = int((hero_x + rival_x) / 2)
+        iy = int(floor_y - 160)
         for angle in range(0, 360, 45):
             rad = math.radians(angle)
-            draw.line((ix+math.cos(rad)*22, iy+math.sin(rad)*22,
-                       ix+math.cos(rad)*65, iy+math.sin(rad)*65),
-                      fill="#ffb703", width=5)
+            draw.line((ix + math.cos(rad)*12, iy + math.sin(rad)*12,
+                       ix + math.cos(rad)*46, iy + math.sin(rad)*46),
+                      fill="#111111", width=5)
 
-    hero_phase = t*2.2 + beat
-    rival_phase = t*2.0 + beat + math.pi
-    draw_stickman(draw, hero_x, 715, 1.35, "#202938", hero_phase, 0, 1)
-    draw_stickman(draw, rival_x, 715, 1.35, "#202938", rival_phase, 1, -1)
+    draw_stickman(draw, hero_x, hero_y, 1.28, "#d21f16", t*2.5, 0, 1, hero_pose)
+    draw_stickman(draw, rival_x, rival_y, 1.28, "#3048b5", t*2.3, 1, -1, rival_pose)
 
-    # A harmless comic twist: the shadow fighter slips and sits down at the end.
-    if segment == 4 and local > 0.58:
-        sx = int(rival_x)
-        draw.ellipse((sx-35, 770, sx+35, 790), fill="#aab6ca")
-        draw.arc((sx-26, 665, sx+26, 715), 0, 180, fill="#202938", width=6)
-        for k in range(3):
-            draw.line((sx+35+k*9, 650-k*10, sx+48+k*9, 638-k*10), fill="#ff4757", width=4)
-
-    # Small progress marker; no words or captions.
-    draw.rounded_rectangle((35, 45, WIDTH-35, 56), radius=6, fill="#d5deef")
-    draw.rounded_rectangle((35, 45, 35+(WIDTH-70)*(frame_index/FRAME_COUNT), 56),
-                           radius=6, fill="#ff4757")
     return image
 
 
