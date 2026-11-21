@@ -11,34 +11,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Blender and FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender ffmpeg
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install video tools
+      - name: Install Python dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Generate short story
+          pip install google-api-python-client google-auth requests
+      - name: Generate a NEW silent 3D fight story
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python app_short.py
-      - name: Generate free 2D Stick Man Fight Short
-        run: python make_shorts.py
-      - name: Upload YouTube Short (PUBLIC)
+      - name: Render NEW 3D Stickman Fight Short
+        run: blender -b -t 2 --python make_shorts_3d.py
+      - name: Upload NEW YouTube Short (PUBLIC)
         if: hashFiles('output/ai_story_short.mp4') != ''
         env:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python upload_shorts.py
-      - name: Save Short artifact
+      - name: Save generated Short
         if: always() && hashFiles('output/ai_story_short.mp4') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ai-story-world-short
+          name: ai-story-world-3d-short
           path: |
             story.txt
             output/
