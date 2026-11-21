@@ -149,13 +149,7 @@ for sec,hx,bx,hp,bp,hj,bj in beats:
     frame=int(sec*FPS)
     pose(hero,frame,hx,hp,hj)
     pose(rival,frame,bx,bp,bj)
-# Add anticipation and final impact beats for more lively motion.
-for c in (hero,rival):
-    for obj in c.values():
-        if hasattr(obj,"animation_data") and obj.animation_data and obj.animation_data.action:
-            for fc in obj.animation_data.action.fcurves:
-                for kp in fc.keyframe_points: kp.interpolation="BEZIER"
-
+# Blender 5.x keyframe interpolation defaults are smooth Bezier.
 scene=bpy.context.scene
 scene.frame_start=1; scene.frame_end=FPS*DURATION
 scene.render.engine="BLENDER_EEVEE_NEXT" if bpy.app.version >= (4,2,0) else "BLENDER_EEVEE"
