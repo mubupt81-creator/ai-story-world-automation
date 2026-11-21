@@ -3,7 +3,7 @@ from mathutils import Vector
 from pathlib import Path
 
 # 30-second, silent, stylized 3D stick-fighter short.
-W,H,FPS,DURATION = 360,640,12,30
+W,H,FPS,DURATION = 270,480,8,30
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 bpy.ops.object.select_all(action="SELECT")
@@ -152,12 +152,18 @@ for sec,hx,bx,hp,bp,hj,bj in beats:
 # Blender 5.x keyframe interpolation defaults are smooth Bezier.
 scene=bpy.context.scene
 scene.frame_start=1; scene.frame_end=FPS*DURATION
-scene.render.engine="BLENDER_EEVEE"
+scene.render.engine="BLENDER_WORKBENCH"
+scene.display.shading.light="STUDIO"
+scene.display.shading.color_type="MATERIAL"
+scene.display.shading.show_shadows=True
+scene.display.shading.show_cavity=True
+scene.display.shading.cavity_type="BOTH"
+scene.display.shading.cavity_ridge_factor=1.2
+scene.display.shading.cavity_valley_factor=1.0
 scene.render.resolution_x=W; scene.render.resolution_y=H; scene.render.resolution_percentage=100
 scene.render.fps=FPS
 # Keep CPU-only GitHub Actions rendering within the runner time limit.
-if hasattr(scene, "eevee"):
-    scene.eevee.taa_render_samples=8
+
 frames=OUT/"frames"
 frames.mkdir(exist_ok=True)
 for old_frame in frames.glob("frame_*.png"):
@@ -171,7 +177,7 @@ scene.camera.data.lens=50
 scene.world.color=(0.8,0.8,0.8)
 scene.render.use_file_extension=True
 scene.frame_set(1)
-print(f"Rendering optimized 3D Stickman Fight: {W}x{H}, {FPS} fps, {DURATION}s...")
+print(f"Rendering FAST 3D Stickman Fight: {W}x{H}, {FPS} fps, {DURATION}s...")
 bpy.ops.render.render(animation=True)
 video=OUT/"ai_story_short.mp4"
 subprocess.run([
