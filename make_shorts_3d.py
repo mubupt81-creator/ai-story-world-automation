@@ -1,4 +1,4 @@
-import bpy, math, json
+import bpy, math, json, subprocess
 from mathutils import Vector
 from pathlib import Path
 
@@ -155,20 +155,26 @@ scene.frame_start=1; scene.frame_end=FPS*DURATION
 scene.render.engine="BLENDER_EEVEE"
 scene.render.resolution_x=W; scene.render.resolution_y=H; scene.render.resolution_percentage=100
 scene.render.fps=FPS
-scene.render.image_settings.file_format="FFMPEG"
-scene.render.ffmpeg.format="MPEG4"; scene.render.ffmpeg.codec="H264"
-scene.render.ffmpeg.constant_rate_factor="MEDIUM"; scene.render.ffmpeg.ffmpeg_preset="GOOD"
-scene.render.filepath=str(OUT/"ai_story_short.mp4")
-scene.view_settings.view_transform="Standard"
+frames=OUT/"frames"
+frames.mkdir(exist_ok=True)
+for old_frame in frames.glob("frame_*.png"):
+    old_frame.unlink()
+scene.render.image_settings.file_format="PNG"
 scene.render.image_settings.color_mode="RGB"
+scene.render.filepath=str(frames/"frame_")
+scene.view_settings.view_transform="Standard"
 scene.render.film_transparent=False
 scene.camera.data.lens=50
 scene.world.color=(0.8,0.8,0.8)
 scene.render.use_file_extension=True
 scene.frame_set(1)
-print("Rendering original 3D Stickman Fight animation...")
+print("Rendering 3D Stickman Fight frames...")
 bpy.ops.render.render(animation=True)
 video=OUT/"ai_story_short.mp4"
+subprocess.run([
+    "ffmpeg","-y","-framerate",str(FPS),"-i",str(frames/"frame_%04d.png"),
+    "-c:v","libx264","-pix_fmt","yuv420p","-movflags","+faststart",str(video)
+],check=True)
 if not video.exists() or video.stat().st_size<10000:
     raise RuntimeError("3D video render did not produce a valid MP4")
 print(f"SUCCESS: Created silent 3D fight video: {video} ({video.stat().st_size} bytes)")
