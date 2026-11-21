@@ -43,7 +43,7 @@ def segment(obj, a, b, frame):
     av,bv=Vector(a),Vector(b); d=bv-av
     obj.location=(av+bv)*0.5
     obj.rotation_mode="QUATERNION"; obj.rotation_quaternion=d.to_track_quat("Z","Y")
-    obj.dimensions=(obj.dimensions.x,obj.dimensions.y,d.length)
+    obj.scale.z=d.length
     obj.keyframe_insert(data_path="location",frame=frame)
     obj.keyframe_insert(data_path="rotation_quaternion",frame=frame)
     obj.keyframe_insert(data_path="scale",frame=frame)
@@ -158,7 +158,7 @@ for c in (hero,rival):
 
 scene=bpy.context.scene
 scene.frame_start=1; scene.frame_end=FPS*DURATION
-scene.render.engine="BLENDER_EEVEE_NEXT" if hasattr(bpy.types,"BLENDER_EEVEE_NEXT") else "BLENDER_EEVEE"
+scene.render.engine="BLENDER_EEVEE_NEXT" if bpy.app.version >= (4,2,0) else "BLENDER_EEVEE"
 scene.render.resolution_x=W; scene.render.resolution_y=H; scene.render.resolution_percentage=100
 scene.render.fps=FPS
 scene.render.image_settings.file_format="FFMPEG"
