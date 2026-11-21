@@ -152,7 +152,7 @@ for sec,hx,bx,hp,bp,hj,bj in beats:
 # Blender 5.x keyframe interpolation defaults are smooth Bezier.
 scene=bpy.context.scene
 scene.frame_start=1; scene.frame_end=FPS*DURATION
-scene.render.engine="BLENDER_EEVEE_NEXT" if bpy.app.version >= (4,2,0) else "BLENDER_EEVEE"
+scene.render.engine="BLENDER_EEVEE"
 scene.render.resolution_x=W; scene.render.resolution_y=H; scene.render.resolution_percentage=100
 scene.render.fps=FPS
 scene.render.image_settings.file_format="FFMPEG"
